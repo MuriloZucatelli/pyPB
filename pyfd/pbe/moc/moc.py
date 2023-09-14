@@ -12,6 +12,64 @@ class MOCSolution:
     Based on Brooks and Hidy uniform discretisation
 
     """
+
+    def __init__(
+            self, number_of_classes, t, dxi, N0=None, xi0=None,
+            beta=None, gamma=None, Q=None,
+            theta=None, n0=None, A0=None):
+
+        self.number_of_classes = number_of_classes
+        if xi0 is None:
+            self.xi0 = dxi
+        else:
+            self.xi0 = xi0
+        self.n0 = n0
+        self.theta = theta
+        # Uniform grid
+        self.xi = self.xi0 + dxi * arange(self.number_of_classes)  # vetor com as classes ξ
+        if N0 is None:
+            N0 = zeros_like(self.xi)
+        else:
+            N0 = array([
+                quad(N0, self.xi[i] - dxi / 2., self.xi[i] + dxi / 2.)[0]
+                for i in range(number_of_classes)])  # number concentration???
+
+        self.nu = 2.0  # Binary breakup
+        # Kernels setup
+        if gamma is not None and beta is not None:
+            self.gamma = gamma(self.xi)
+            self.betadxi = zeros(
+                (self.number_of_classes, self.number_of_classes))  # β(ξ,ξ′j)
+            for i in range(1, len(self.xi)):
+                for j in range(i):
+                    self.betadxi[j, i] = beta(self.xi[j], self.xi[i])
+                self.betadxi[:, i] =\
+                    self.betadxi[:, i] / nsum(self.betadxi[:, i])  # normalizando
+
+        else:
+            self.gamma = None
+            self.betadxi = None
+
+        if Q is not None:
+            xi_len = len(self.xi)
+            self.Q = array([[Q(self.xi[i], self.xi[j]) for j in range(xi_len)]
+                            for i in range(xi_len)])
+            # self.Q = zeros((self.number_of_classes, self.number_of_classes))
+            # for i in range(len(self.xi)):
+            #    for j in range(len(self.xi)):
+            #        self.Q[i, j] = Q(self.xi[i], self.xi[j])  #
+        else:
+            self.Q = None
+
+        if A0 is None:
+            self.A0 = None
+        else:
+            self.A0 = array([
+                quad(A0, self.xi[i] - dxi / 2., self.xi[i] + dxi / 2.)[0]
+                for i in range(number_of_classes)])
+        # Solve procedure
+        self.N = odeint(lambda NN, t: self.RHS(NN, t), N0, t)
+
     def RHS(
         self, N, t
     ):
@@ -60,57 +118,3 @@ class MOCSolution:
     @property
     def total_numbers(self):
         return nsum(self.N, axis=1)
-
-    def __init__(
-            self, number_of_classes, t, dxi, N0=None, xi0=None,
-            beta=None, gamma=None, Q=None,
-            theta=None, n0=None, A0=None):
-
-        self.number_of_classes = number_of_classes
-        if xi0 is None:
-            self.xi0 = dxi
-        else:
-            self.xi0 = xi0
-        self.n0 = n0
-        self.theta = theta
-        # Uniform grid
-        self.xi = self.xi0 + dxi * arange(self.number_of_classes)
-        if N0 is None:
-            N0 = zeros_like(self.xi)
-        else:
-            N0 = array([
-                quad(N0, self.xi[i] - dxi / 2., self.xi[i] + dxi / 2.)[0]
-                for i in range(number_of_classes)])
-
-        self.nu = 2.0  # Binary breakup
-        # Kernels setup
-        if gamma is not None and beta is not None:
-            self.gamma = gamma(self.xi)
-            self.betadxi = zeros(
-                (self.number_of_classes, self.number_of_classes))
-            for i in range(1, len(self.xi)):
-                for j in range(i):
-                    self.betadxi[j, i] = beta(self.xi[j], self.xi[i])
-                self.betadxi[:, i] =\
-                    self.betadxi[:, i] / nsum(self.betadxi[:, i])
-
-        else:
-            self.gamma = None
-            self.betadxi = None
-
-        if Q is not None:
-            self.Q = zeros((self.number_of_classes, self.number_of_classes))
-            for i in range(len(self.xi)):
-                for j in range(len(self.xi)):
-                    self.Q[i, j] = Q(self.xi[i], self.xi[j])  #
-        else:
-            self.Q = None
-
-        if A0 is None:
-            self.A0 = None
-        else:
-            self.A0 = array([
-                quad(A0, self.xi[i] - dxi / 2., self.xi[i] + dxi / 2.)[0]
-                for i in range(number_of_classes)])
-        # Solve procedure
-        self.N = odeint(lambda NN, t: self.RHS(NN, t), N0, t)

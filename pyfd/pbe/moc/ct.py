@@ -1,4 +1,7 @@
-from .moc import MOCSolution
+if __name__ == "__main__":
+    from moc import MOCSolution
+else:
+    from .moc import MOCSolution
 from numpy import arange, sqrt, exp, pi
 
 """
@@ -35,7 +38,7 @@ class CTSolution(MOCSolution):
 
         time = arange(0.0, 3600, 0.5)
 
-        mm3_to_cm3 = 0.1**3  # TODO: Fix that scaling
+        mm3_to_cm3 = 0.1**3
         vmax = vmax * mm3_to_cm3
         # vmax = 0.06 * mm3_to_cm3
 
