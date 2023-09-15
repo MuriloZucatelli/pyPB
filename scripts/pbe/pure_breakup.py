@@ -17,9 +17,9 @@ Case setup based on:
     for our kernels.
 """
 
-grids = [10, 20, 40, 80, 160]     # número de classes utilizadas na discretização
+grids = [10, 20, 40, 80, 160]     # Número de classes utilizadas na discretização
 time = arange(0.0, 10.0, 0.001)   # Tempo e passo
-vmax = 1.0                        # Monodisperso com v = 1?
+vmax = 1.0                        # 
 pbe_solutions = dict()
 
 for g in grids:
@@ -28,7 +28,7 @@ for g in grids:
     # This is modelling Dirac's delta
     def N0init(x):
         return piecewise(
-            x, [x < vmax - threshold, x >= vmax - threshold], [0, g / vmax])
+            x, [x < vmax - threshold, x >= vmax - threshold], [0, g / vmax])  # 0 ou g/vmax   função delta de dirac
     pbe_solutions[g] = MOCSolution(
         g, time, vmax / g, N0=N0init,
         beta=lambda x, y: 1.0 / y,       # DDSD   era 2.0 / y

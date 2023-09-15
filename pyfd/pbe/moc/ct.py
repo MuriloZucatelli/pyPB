@@ -21,11 +21,11 @@ def beta(v1, v2):
 class CTSolution(MOCSolution):
     def __init__(
             self,
-            M=10,
-            Nstar=4.16,  # [rps] impeller revolutions
-            phi=0.15,  # [1] holdup
-            vmax=0.08):
-        self.D = 10  # [cm] impeller diameter
+            M=10,           # number of classes
+            Nstar=4.16,     # [rps] impeller revolutions
+            phi=0.15,       # [1] holdup  # dispersed phase holdup fraction
+            vmax=0.08):     # 
+        self.D = 10         # [cm] impeller diameter
         self.Nstar = Nstar
         self.phi = phi
 
@@ -34,7 +34,7 @@ class CTSolution(MOCSolution):
         self.rhoc = 1.0  # [g/cm3]
         # Kerosene-dicholorebenzene
         self.rhod = 0.972  # [g/cm3]
-        self.sigma = 42.82  # Unit?
+        self.sigma = 42.82  # Unit? dynes cm-1
 
         time = arange(0.0, 3600, 0.5)
 
@@ -42,27 +42,29 @@ class CTSolution(MOCSolution):
         vmax = vmax * mm3_to_cm3
         # vmax = 0.06 * mm3_to_cm3
 
-        # Feed distribution
-        self.v0 = vmax / 2
-        self.sigma0 = (vmax - self.v0) / 3.3
-        vmin = None  # 5.23e-7
+        # Feed distribution (DSD)
+        self.v0 = vmax / 2                          # Average volume
+        self.sigma0 = (vmax - self.v0) / 3.3        # Standard deviation
+        vmin = None  # 5.23e-7                      # Minimum volume
 
         # Feed
-        theta = 600
-        self.Vt = 12 * 10**3
-        self.n0 = self.Vt / theta
+        theta = 600               # nominal residence time, sec (10 min)
+        self.Vt = 12 * 10**3      # tank volume cm^3
+        self.n0 = self.Vt / theta # 
         MOCSolution.__init__(
             self, M, time, vmax / M, N0=self.N0, xi0=vmin,
             beta=beta, gamma=self.g, Q=self.Qf,
             theta=theta, n0=self.n0, A0=self.A0)
 
-    def N0(self, v):
+    def N0(self, v):              # total number of drops?
         return 0 * v
-
+    
+    # probability density of droplet size in the feed 
+    # number fraction of droplets of volume v to v + dv at time t
     def A0(self, v):
         return \
             self.phi / (self.v0 * self.sigma0 * sqrt(2 * pi)) * \
-            exp(-(v - self.v0)**2 / (2 * self.sigma0**2))
+            exp(-(v - self.v0)**2 / (2 * self.sigma0**2))  # Gaussian distribuition
 
     def g(self, v, C1=0.4, C2=0.08):
         return \

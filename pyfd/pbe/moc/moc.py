@@ -20,38 +20,38 @@ class MOCSolution:
 
         self.number_of_classes = number_of_classes
         if xi0 is None:
-            self.xi0 = dxi
+            self.xi0 = dxi    # define o ξ0, volume minimo
         else:
             self.xi0 = xi0
         self.n0 = n0
-        self.theta = theta
+        self.theta = theta  # mean residence time?
         # Uniform grid
-        self.xi = self.xi0 + dxi * arange(self.number_of_classes)  # vetor com as classes ξ
+        self.xi = self.xi0 + dxi * arange(self.number_of_classes)  # vetor com as classes vk ξ, dxi é o parametro k
+        xi_len = len(self.xi)
         if N0 is None:
             N0 = zeros_like(self.xi)
         else:
             N0 = array([
                 quad(N0, self.xi[i] - dxi / 2., self.xi[i] + dxi / 2.)[0]
-                for i in range(number_of_classes)])  # number concentration???
+                for i in range(number_of_classes)])  # number concentration???  integração para o delta de dirac
 
         self.nu = 2.0  # Binary breakup
-        # Kernels setup
+        # Kernels setup avaliando a função beta e gama para cada classe
         if gamma is not None and beta is not None:
             self.gamma = gamma(self.xi)
             self.betadxi = zeros(
                 (self.number_of_classes, self.number_of_classes))  # β(ξ,ξ′j)
-            for i in range(1, len(self.xi)):
+            for i in range(1, xi_len):
                 for j in range(i):
                     self.betadxi[j, i] = beta(self.xi[j], self.xi[i])
                 self.betadxi[:, i] =\
-                    self.betadxi[:, i] / nsum(self.betadxi[:, i])  # normalizando
+                    self.betadxi[:, i] / nsum(self.betadxi[:, i])  # normalizando apenas a coluna
 
         else:
             self.gamma = None
             self.betadxi = None
-
+        # Q: coalescence rate
         if Q is not None:
-            xi_len = len(self.xi)
             self.Q = array([[Q(self.xi[i], self.xi[j]) for j in range(xi_len)]
                             for i in range(xi_len)])
             # self.Q = zeros((self.number_of_classes, self.number_of_classes))
@@ -60,8 +60,9 @@ class MOCSolution:
             #        self.Q[i, j] = Q(self.xi[i], self.xi[j])  #
         else:
             self.Q = None
-
-        if A0 is None:
+        
+        # what is this
+        if A0 is None:    
             self.A0 = None
         else:
             self.A0 = array([
