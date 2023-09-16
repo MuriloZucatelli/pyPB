@@ -23,35 +23,34 @@ class CTSolution(MOCSolution):
             self,
             M=10,           # number of classes
             Nstar=4.16,     # [rps] impeller revolutions
-            phi=0.15,       # [1] holdup  # dispersed phase holdup fraction
-            vmax=0.08):     # 
+            phi=0.15,       # [1] holdup, dispersed phase holdup fraction
+            vmax=0.08):     # Maximum droplet volume
         self.D = 10         # [cm] impeller diameter
         self.Nstar = Nstar
         self.phi = phi
 
         # Water
-        self.muc = 0.89e-2  # [P = g * cm^-1 s^-1]
-        self.rhoc = 1.0  # [g/cm3]
+        self.muc = 0.89e-2  # [P = g * cm^-1 s^-1] # dynamic viscosity
+        self.rhoc = 1.0  # [g/cm3] density
         # Kerosene-dicholorebenzene
-        self.rhod = 0.972  # [g/cm3]
-        self.sigma = 42.82  # Unit? dynes cm-1
+        self.rhod = 0.972    # [g/cm3] density
+        self.sigma = 42.82   # interfacial tension, Unit? dynes cm-1
 
-        time = arange(0.0, 3600, 0.5)
-
-        mm3_to_cm3 = 0.1**3
-        vmax = vmax * mm3_to_cm3
+        time = arange(0.0, 3600, 0.5)  # Tempo de integração
+        mm3_to_cm3 = 0.1**3            # Conversão mm³ para cm³
+        vmax = vmax * mm3_to_cm3       # Maximum volume
+        vmin = None  # 5.23e-7         # Minimum volume
         # vmax = 0.06 * mm3_to_cm3
 
         # Feed distribution (DSD)
         self.v0 = vmax / 2                          # Average volume
         self.sigma0 = (vmax - self.v0) / 3.3        # Standard deviation
-        vmin = None  # 5.23e-7                      # Minimum volume
 
         # Feed
-        theta = 600               # nominal residence time, sec (10 min)
-        self.Vt = 12 * 10**3      # tank volume cm^3
-        self.n0 = self.Vt / theta # 
-        MOCSolution.__init__(
+        theta = 600                # nominal residence time, sec (10 min)
+        self.Vt = 12 * 10**3       # tank volume [cm³]
+        self.n0 = self.Vt / theta  # what this mean????
+        MOCSolution.__init__(      # not necessary this __init__
             self, M, time, vmax / M, N0=self.N0, xi0=vmin,
             beta=beta, gamma=self.g, Q=self.Qf,
             theta=theta, n0=self.n0, A0=self.A0)
@@ -66,6 +65,7 @@ class CTSolution(MOCSolution):
             self.phi / (self.v0 * self.sigma0 * sqrt(2 * pi)) * \
             exp(-(v - self.v0)**2 / (2 * self.sigma0**2))  # Gaussian distribuition
 
+    # Breakup model
     def g(self, v, C1=0.4, C2=0.08):
         return \
             C1 * v**(-2. / 9) * self.D**(2. / 3) * \
@@ -73,6 +73,7 @@ class CTSolution(MOCSolution):
             exp(- C2 * (1 + self.phi)**2 * self.sigma /
                 (self.rhod * v**(5. / 9) * self.D**(4. / 3) * self.Nstar**2))
 
+    # Coalescence model
     def Qf(self, v1, v2, C3=2.8e-6, C4=1.83e9):
         d_ratio = (v1**(1. / 3) * v2**(1. / 3)) / (v1**(1. / 3) + v2**(1. / 3))
 

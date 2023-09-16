@@ -101,21 +101,22 @@ class MOCSolution:
 
     @property
     def number_density(self):
-        return self.N / self.xi0
+        return self.N / self.xi0  # N/dV, TODO xi0 só é igual a dV quando xi0=dxi
 
     @property
     def d32(self):
         return \
             (6 / pi * sum(self.N[-1] * self.xi) / sum(self.N[-1]))**(1. / 3)
-
+        # (6/pi * sum(NiVi)/sum(N))^(1/3)
+    
     @property
-    def xi_d(self):                       # xi: volume, xi_d: diametro
+    def xi_d(self):                         # xi: volume, xi_d: diametro
         return (6 / pi * self.xi)**(1. / 3)
 
     @property
     def total_volume(self):
-        return nsum(self.N[-1] * self.xi)
+        return nsum(self.N[-1] * self.xi)   # integral de NiVi, N[-1]?
 
     @property
     def total_numbers(self):
-        return nsum(self.N, axis=1)
+        return nsum(self.N, axis=1)         # total Droplets per m³
