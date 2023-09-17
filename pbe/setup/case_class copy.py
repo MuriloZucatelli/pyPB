@@ -4,6 +4,14 @@ from pbe.models import breakup
 
 
 class DomainProperties:
+    """    domainProperties:
+        description: is a dictionary with properties of the computational
+        domain and discretization parameters
+        Required fields:
+        theta       mean residence time
+        M           number of classes used
+        V           domain volume
+    """
     def __init__(self, theta, V, M):
         self.theta = theta
         self.V = V
@@ -11,7 +19,27 @@ class DomainProperties:
 
 
 class DispersionProperties:
+    """Dictionary with properties of the dispersed phase
+        dispersion = dict()
+        Args:
+            phi (float)        volume fraction
+            rho (float)        density
+            sigma (float)      interfacial tension
+            vMax (float)       maximum volume for the discretization
+            v0 (float)         mean volume for the distributinon function
+            sigma0 (float)     standard deviation for the distribution function
+    """
     def __init__(self, phi, rho, sigma, v_max, v0, sigma0):
+        """_summary_
+
+        Args:
+            phi (_type_): _description_
+            rho (_type_): _description_
+            sigma (_type_): _description_
+            v_max (_type_): _description_
+            v0 (_type_): _description_
+            sigma0 (_type_): _description_
+        """
         self.phi = phi
         self.rho = rho
         self.sigma = sigma
@@ -26,15 +54,8 @@ beta = breakup.breakupModels.beta  # Função passada
 '''
 input:
     dispersion:
-        description: is a dictionary with properties of the dispersed phase
-        dispersion = dict()
-        Required fields:
-        phi         volume fraction
-        rho         density
-        sigma       interfacial tension
-        vMax        maximum volume for the discretization
-        v0          mean volume for the distributinon function
-        sigma0      standard deviation for the distribution function
+        description: is a 
+        
 
     contProperties:
         description: is a dictionary with properties of the continuous phase
@@ -43,13 +64,7 @@ input:
         rho         density
         epsilon     turbulent energy dissipation rate
 
-    domainProperties:
-        description: is a dictionary with properties of the computational
-        domain and discretization parameters
-        Required fields:
-        theta       mean residence time
-        M           number of classes used
-        V           domain volume
+
 
     model_parameters:
         description: list of four values C1 - C4 representing breakup model
@@ -103,35 +118,7 @@ class CaseSolution(MOCSolution):
             beta=beta, gamma=self.g, Q=self.Qf,
             theta=theta, n0=self.n0, A0=self.A0)
 
-    def A0(self, v):
-        return \
-            self.phi / (self.v0 * self.sigma0 * sqrt(2 * pi)) * \
-            exp(-(v - self.v0)**2 / (2 * self.sigma0**2))
-
-    def g(self, v):
-        C1 = self.C[0]
-        C2 = self.C[1]
-        return \
-            C1 * v**(-2. / 9) * self.epsilon**(1. / 3) / (1 + self.phi) * \
-            exp(- C2 * (1 + self.phi)**2 * self.sigma /
-                (self.rhod * v**(5. / 9) * self.epsilon**(2. / 3)))
-
-    def Qf(self, v1, v2):
-        C3 = self.C[2]
-        C4 = self.C[3]
-        d_ratio = (v1**(1. / 3) * v2**(1. / 3)) / (v1**(1. / 3) + v2**(1. / 3))
-
-        return C3 * \
-            (v1**(2. / 3) + v2**(2. / 3)) * \
-            (v1**(2. / 9) + v2**(2. / 9))**0.5 * \
-            self.epsilon**(1. / 3) / \
-            ((1 + self.phi)) * \
-            exp(
-                -C4 * self.muc * self.rhoc * self.epsilon /
-                self.sigma**2 /
-                (1 + self.phi)**3 *
-                d_ratio**4)
-
+    
     @property
     def pbe_phi(self):
         return self.total_volume / self.Vt
