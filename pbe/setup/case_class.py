@@ -1,5 +1,6 @@
 from .moc import MOCSolution
 from numpy import arange, sqrt, exp, pi
+from pbe.models import breakup
 
 
 class DomainProperties:
@@ -19,8 +20,7 @@ class DispersionProperties:
         self.sigma0 = sigma0
 
 
-def beta(v1, v2):
-    return 2.4 / v2 * exp(-4.5 * (2 * v1 - v2)**2 / (v2**2))
+beta = breakup.breakupModels.beta # Função passada
 
 
 '''
