@@ -1,15 +1,3 @@
-class PayrollSystem:
-    def calculate_payroll(self, employees):
-        print('Calculating Payroll')
-        print('===================')
-        for employee in employees:
-            print(f'Payroll for: {employee.id} - {employee.name}')
-            print(f'- Check amount: {employee.calculate_payroll()}')
-            if employee.address:
-                print('- Sent to:')
-                print(employee.address)
-            print('')
-
 class Employee:
     def __init__(self, id, name):
         self.id = id
@@ -31,3 +19,10 @@ class Address:
         lines.append(f'{self.city}, {self.state} {self.zipcode}')
         return '\n'.join(lines)
     
+manager = employees.Manager(1, 'Mary Poppins', 3000)
+manager.address = contacts.Address(
+    '121 Admin Rd', 
+    'Concord', 
+    'NH', 
+    '03301'
+)
