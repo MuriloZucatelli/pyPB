@@ -1,10 +1,72 @@
-from .moc import MOCSolution
+from pbe.solvers.moc import MOCSolution
 from numpy import arange, sqrt, exp, pi
 from pbe.models import breakup
+beta = breakup.breakupModels.beta  # Função passada
 
 
-class DomainProperties:
-    """    domainProperties:
+class Fluid:
+    """ Definição basica do fluido
+    """
+    def __init__(self, name: str, rho: float, mu: float) -> None:
+        """ Inicializa o fluido
+
+        Args:
+            name (str): nome
+            rho (float): massa especifica
+            mu (float): dynamic viscosity
+        """
+        self.name = name
+        self.rho = rho
+        self.mu = mu
+
+
+class ContinuosPhase(Fluid):
+    """Fase continua
+
+    Args:
+        Fluid (object): fluid
+    """
+    def __init__(self, name: str, rho: float, mu: float) -> None:
+        """_summary_
+
+        Args:
+            name (str): nome
+            rho (float): massa especifica
+            mu (float): dynamic viscosity
+        """
+        super(ContinuosPhase, self).__init__(name, rho, mu)
+
+
+class DispersePhase(Fluid):
+    """Dictionary with properties of the dispersed phase
+    dispersion = dict()
+        
+        Attributes:
+            __
+    """
+    def __init__(self, name: str, phi: float, rho: float, sigma: float,
+                 v_max: float, v0: float, sigma0: float, mu: float = None):
+        """ Cria o objeto de fase dispersa
+        
+        Args:
+            name (str)         name
+            phi (float)        volume fraction
+            rho (float)        density
+            sigma (float)      interfacial tension
+            vMax (float)       maximum volume for the discretization
+            v0 (float)         mean volume for the distributinon function
+            sigma0 (float)     standard deviation for the distribution function
+        """
+        super(DispersePhase, self).__init__(name, rho, mu)
+        self.phi = phi
+        self.sigma = sigma
+        self.v_max = v_max
+        self.v0 = v0
+        self.sigma0 = sigma0
+
+
+class Domain:
+    """ domainProperties:
         description: is a dictionary with properties of the computational
         domain and discretization parameters
         Required fields:
@@ -18,45 +80,8 @@ class DomainProperties:
         self.M = M
 
 
-class DispersionProperties:
-    """Dictionary with properties of the dispersed phase
-        dispersion = dict()
-        Args:
-            phi (float)        volume fraction
-            rho (float)        density
-            sigma (float)      interfacial tension
-            vMax (float)       maximum volume for the discretization
-            v0 (float)         mean volume for the distributinon function
-            sigma0 (float)     standard deviation for the distribution function
-    """
-    def __init__(self, phi, rho, sigma, v_max, v0, sigma0):
-        """_summary_
-
-        Args:
-            phi (_type_): _description_
-            rho (_type_): _description_
-            sigma (_type_): _description_
-            v_max (_type_): _description_
-            v0 (_type_): _description_
-            sigma0 (_type_): _description_
-        """
-        self.phi = phi
-        self.rho = rho
-        self.sigma = sigma
-        self.v_max = v_max
-        self.v0 = v0
-        self.sigma0 = sigma0
-
-
-beta = breakup.breakupModels.beta  # Função passada
-
 
 '''
-input:
-    dispersion:
-        description: is a 
-        
-
     contProperties:
         description: is a dictionary with properties of the continuous phase
         Required fields:

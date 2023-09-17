@@ -1,4 +1,4 @@
-from .case_class import CaseSolution, DomainProperties, DispersionProperties
+from pbe.setup.case_class import CaseSolution, DomainProperties, DispersionProperties
 
 
 class CTSolution(CaseSolution):
