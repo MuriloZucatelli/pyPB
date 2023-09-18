@@ -8,11 +8,14 @@ This module contains coalescence models objects for population balance equation
 
 # Importing dependencies
 from numpy import arange, sqrt, exp, pi
+from pbe.setup.system import ContinuosPhase, DispersePhase
 
 
 class coalescenceModels():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, C, cp: ContinuosPhase, dp: DispersePhase) -> None:
+        self.C = C
+        self.cp = cp
+        self.dp = dp
 
     def Qf(self, v1: float = None, v2: float = None) -> float:
         """Coalescence rate
@@ -31,10 +34,10 @@ class coalescenceModels():
         return C3 * \
             (v1**(2. / 3) + v2**(2. / 3)) * \
             (v1**(2. / 9) + v2**(2. / 9))**0.5 * \
-            self.epsilon**(1. / 3) / \
-            ((1 + self.phi)) * \
+            self.cp.epsilon**(1. / 3) / \
+            ((1 + self.dp.phi)) * \
             exp(
-                -C4 * self.muc * self.rhoc * self.epsilon /
-                self.sigma**2 /
-                (1 + self.phi)**3 *
+                -C4 * self.cp.mu * self.cp.rho * self.cp.epsilon /
+                self.dp.sigma**2 /
+                (1 + self.dp.phi)**3 *
                 d_ratio**4)

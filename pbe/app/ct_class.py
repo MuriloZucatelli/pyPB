@@ -1,7 +1,7 @@
-from pbe.setup.case_class import CaseSolution, DomainProperties, DispersionProperties
+from pbe.setup.case_class_copy import CaseSolution, Domain, DispersePhase, ContinuosPhase
 
 
-class CTSolution(CaseSolution):
+class CTSolution():
     def __init__(
             self,
             M=10,
@@ -11,24 +11,24 @@ class CTSolution(CaseSolution):
             model_parameters=None):
         self.D = 0.10  # [m] impeller diameter
 
-        contProperties = dict()
-
         # Water
-        contProperties['mu'] = 0.89e-3  # [P = kg * m^-1 s^-1]
-        contProperties['rho'] = 1000  # [kg/cm3]
+        cont = ContinuosPhase(
+            name='water',
+            rho=1000,      # [kg/cm3]
+            mu=0.89e-3,    # [P = kg * m^-1 s^-1]
+            epsilon=Nstar**3 * self.D**2)
         # contProperties['epsilon'] = 0.407 * Nstar**3 * self.D**2
-        contProperties['epsilon'] = Nstar**3 * self.D**2
-        # Kerosene-dicholorebenzene
 
-        dispersion = DispersionProperties(
+        # Kerosene-dicholorebenzene
+        dispersion = DispersePhase(
+            name='Kerosene-dicholorebenzene',
             phi=phi, rho=972.,  # [kg/m3]
             sigma=42.82e-3,  # [P = kg * m^-1 s^-1]
             v_max=6e-11,
             v0=v0,
             sigma0=v0 / 10.)
 
-        domain = DomainProperties(theta=600, V=12e-3, M=M)
+        domain = Domain(theta=600, V=12e-3, M=M)
 
-        CaseSolution.__init__(
-            self, dispersion, contProperties, domain,
+        CaseSolution(dispersion, cont, domain,
             model_parameters=model_parameters)

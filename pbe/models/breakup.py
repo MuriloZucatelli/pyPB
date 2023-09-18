@@ -8,11 +8,14 @@ This module contains breakup models objects for population balance equation
 
 # Importing dependencies
 from numpy import arange, sqrt, exp, pi
+from pbe.setup.system import ContinuosPhase, DispersePhase
 
 
 class breakupModels():
-    def __init__(self) -> None:
-        pass
+    def __init__(self, C, cp: ContinuosPhase, dp: DispersePhase) -> None:
+        self.C = C
+        self.cp = cp
+        self.dp = dp
 
     def gamma(self, v) -> float:
         """Breakup rate
@@ -26,9 +29,9 @@ class breakupModels():
         C1 = self.C[0]   # TODO
         C2 = self.C[1]
         return \
-            C1 * v**(-2. / 9) * self.epsilon**(1. / 3) / (1 + self.phi) * \
-            exp(- C2 * (1 + self.phi)**2 * self.sigma /
-                (self.rhod * v**(5. / 9) * self.epsilon**(2. / 3))) # TODO
+            C1 * v**(-2. / 9) * self.cp.epsilon**(1. / 3) / (1 + self.dp.phi) * \
+            exp(- C2 * (1 + self.dp.phi)**2 * self.dp.sigma /
+                (self.dp.rho * v**(5. / 9) * self.cp.epsilon**(2. / 3)))
 
     @staticmethod
     def beta(v1: float, v2: float) -> float:

@@ -1,18 +1,28 @@
-    """Module for droplet size distribuition functions
-    """
+# -*- coding: utf-8 -*-
+
+"""
+    Module for droplet size distribuition functions
+"""
+
 
 #importing dependences
-from numpy import exp, pi
+from numpy import exp, pi, sqrt
+from pbe.setup.system import DispersePhase
 
-def A0(self, v):
-    """_summary_
 
-    Args:
-        v (_type_): _description_
+class analitico:
+    def __init__(self, dp: DispersePhase) -> None:
+        self.dp = dp
 
-    Returns:
-        _type_: _description_
-    """
-    return \
-        self.phi / (self.v0 * self.sigma0 * sqrt(2 * pi)) * \
-        exp(-(v - self.v0)**2 / (2 * self.sigma0**2))
+    def A0(self, v):
+        """C&T
+
+        Args:
+            v (float): droplet volume
+
+        Returns:
+            density number distribuition
+        """
+        return \
+            self.dp.phi / (self.dp.v0 * self.dp.sigma0 * sqrt(2 * pi)) * \
+            exp(-(v - self.dp.v0)**2 / (2 * self.dp.sigma0**2))

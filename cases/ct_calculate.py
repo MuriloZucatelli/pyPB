@@ -1,4 +1,4 @@
-from pbe.setup.case_class import CTSolution
+from pbe.app.ct_class import CTSolution
 from numpy import linspace
 import pickle
 
