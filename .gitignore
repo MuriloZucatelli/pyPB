@@ -4,6 +4,7 @@
 *.pdf
 *.pgf
 *.pickle
+*.vscode
 !scripts/pbe/moc/results/*.pickle
 pbe/validationData/orifice/results/histograms/*
 pbe/validationData/orifice/results/*.pdf

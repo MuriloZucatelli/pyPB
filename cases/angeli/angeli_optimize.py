@@ -1,6 +1,6 @@
 from numpy import genfromtxt, abs, array, pi
 from scipy.optimize import minimize, differential_evolution
-from pyfd.pbe.moc import AngeliSolution
+from pbe.moc import AngeliSolution
 import time
 import pickle
 

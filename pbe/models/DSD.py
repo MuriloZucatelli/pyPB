@@ -26,3 +26,4 @@ class analitico:
         return \
             self.dp.phi / (self.dp.v0 * self.dp.sigma0 * sqrt(2 * pi)) * \
             exp(-(v - self.dp.v0)**2 / (2 * self.dp.sigma0**2))
+        # Gaussian distribuition

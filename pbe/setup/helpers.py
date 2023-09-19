@@ -36,7 +36,6 @@ def set_plt_params(
         # 'xtick.labelsize': 7,
         # 'ytick.labelsize': 7,
         'text.usetex': True,
-        'text.latex.unicode': True,
         'figure.figsize': fig_size,
         'pgf.texsystem': "xelatex",
         'pgf.rcfonts': False,

@@ -1,6 +1,7 @@
 """Fluid system classes
 """
 
+
 class Fluid:
     """ Definição basica do fluido
     """
@@ -65,8 +66,18 @@ class Domain:
         theta       mean residence time
         M           number of classes used
         V           domain volume
+        D           Possible impeller diameter [m]
+        Nstar       Possible revolutions per second, sec-1
     """
-    def __init__(self, theta, V, M):
+    def __init__(self,
+                 theta: float,
+                 V: float,
+                 M: float,
+                 D: float = None,
+                 Nstar: float = None) -> None:
+
         self.theta = theta
         self.V = V
         self.M = M
+        self.D = D
+        self.Nstar = Nstar

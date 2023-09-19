@@ -1,6 +1,6 @@
 from numpy import genfromtxt, linspace
 import pickle
-from pyfd.helpers import set_plt_params
+from pbe.setup.helpers import set_plt_params
 from matplotlib.pyplot import figure
 import itertools
 
@@ -16,7 +16,7 @@ Ns = linspace(3, 6, 10)  # rps
 
 ct_data = dict([(
     c, genfromtxt(
-        './pyfd/data/pbe/coulaloglou/d32_N_alpha{0}.txt'.format(c)))
+        './pbe/app/data/coulaloglou/d32_N_alpha{0}.txt'.format(c)))
     for c in concentrations])
 
 set_plt_params(relative_fig_width=0.8)
@@ -35,7 +35,7 @@ for c in concentrations:
 
 for c in concentrations:
     ax.plot(
-        Ns * 60, [cts.d32 * 10 for cts in ct_solutions[c]],
+        Ns * 60, [cts.moc.d32 * 1000 for cts in ct_solutions[c]],
         label=r'Num. $\phi={0:0.2f}$'.format(c / 100.))
     # plt.plot(
     # Ns * 60, [cts.d32 * 1000 for cts in ct_solutions_g[c]],
