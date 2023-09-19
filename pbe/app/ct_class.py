@@ -24,7 +24,7 @@ class CTSolution:
                  model_parameters=None) -> None:
         self.vmax = vmax
         self.D = 0.1        # [m]  impeller diameter
-        #self.D = 10         # [cm] impeller diameter
+        # self.D = 10         # [cm] impeller diameter
         self.Nstar = Nstar
         self.phi = phi
         time = arange(0.0, 3600, 0.5)  # Tempo de integração
@@ -50,27 +50,25 @@ class CTSolution:
             epsilon=Nstar**3 * self.D**2)
         # contProperties['epsilon'] = 0.407 * Nstar**3 * self.D**2
 
-
-
         # Kerosene-dicholorebenzene
         self.dispersephase = DispersePhase(
             name='Kerosene-dicholorebenzene',
             phi=self.phi,
             rho=972.,        # [kg/m3]
-            #rho=0.972,      # [g/cm3]
+            # rho=0.972,      # [g/cm3]
             sigma=42.82e-3,  # [P = kg.m^-1.s^-1: N/m]
-            #sigma=42.82,     # [P = dynes.cm^-1]
+            # sigma=42.82,     # [P = dynes.cm^-1]
             v_max=self.vmax,     # m³
             v0=self.v0,
-            #sigma0=v0 / 10.)
+            # sigma0=v0 / 10.)
             sigma0=self.sigma0)
 
-        #mm3_to_cm3 = 0.1**3            # Conversão mm³ para cm³
-        #vmax = vmax * mm3_to_cm3       # Maximum volume
+        # mm3_to_cm3 = 0.1**3            # Conversão mm³ para cm³
+        # vmax = vmax * mm3_to_cm3       # Maximum volume
         # vmax = 0.06 * mm3_to_cm3
-        
+
         if model_parameters is None:
-            #C3=2.8e-6, C4=1.83e9
+            # C3=2.8e-6, C4=1.83e9
             self.C = [0.4, 0.08, 2.8, 1.83e13]
         else:
             self.C = model_parameters
@@ -83,16 +81,17 @@ class CTSolution:
                                   domain=self.domain,
                                   cp=self.continuousphase,
                                   dp=self.dispersephase).gamma
+        
         Qf = coalescence.coalescenceModels(C=self.C,
                                            domain=self.domain,
                                            cp=self.continuousphase,
                                            dp=self.dispersephase).Qf
+        
         A0 = DSD.analitico(dp=self.dispersephase).A0
 
         self.moc = MOCSolution(
             M, time, vmax / M, N0=self.N0, xi0=vmin,
-            beta=beta, gamma=g, Q=Qf,
-            theta=self.domain.theta,
+            beta=beta, gamma=g, Q=Qf, theta=self.domain.theta,
             n0=self.n0, A0=A0)
 
     def N0(self, v):              # total number of drops?
