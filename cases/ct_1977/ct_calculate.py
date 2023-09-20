@@ -1,6 +1,7 @@
 from pbe.app.ct_class import CTSolution
 from numpy import linspace
 import pickle
+import os
 
 """
 This script calculated solutions to PBE problem that are necessary to reproduce
@@ -13,5 +14,6 @@ ct_solutions = dict([(
     c, [CTSolution(M=200, Nstar=N, phi=c / 100.0) for N in Ns])
     for c in concentrations])
 
-with open('ct_solutions.pickle', 'wb') as f:
+dir = os.path.dirname(__file__)
+with open(os.path.join(dir, 'ct_solutions.pickle'), 'wb') as f:
     pickle.dump(ct_solutions, f)

@@ -1,5 +1,6 @@
 from numpy import genfromtxt, linspace
 import pickle
+import os
 from pbe.setup.helpers import set_plt_params
 from matplotlib.pyplot import figure
 import itertools
@@ -7,11 +8,11 @@ import itertools
 """
 This script plot figure 3 from CT publication.
 """
-
-with open('ct_solutions.pickle', 'rb') as f:
+dir = os.path.dirname(__file__)
+with open(os.path.join(dir, 'ct_solutions.pickle'), 'rb') as f:
     ct_solutions = pickle.load(f)
 
-concentrations = [10] #, 10, 15]
+concentrations = [10]  # , 10, 15]
 Ns = linspace(3, 6, 10)  # rps
 
 ct_data = dict([(
@@ -46,4 +47,4 @@ first_legend = ax.legend(handles[1:], labels[1:], loc='upper right')
 ax.add_artist(first_legend)
 second_legend = ax.legend(handles[:1], labels[:1], loc='lower left')
 fig.patch.set_alpha(0)
-fig.savefig("ct-fig3.pdf", bbox_inches='tight')
+fig.savefig(os.path.join(dir, "ct-fig3.pdf"), bbox_inches='tight')

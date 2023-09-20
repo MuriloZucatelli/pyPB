@@ -75,9 +75,18 @@ class Domain:
                  M: float,
                  D: float = None,
                  Nstar: float = None) -> None:
+        """ domainProperties
 
+        Args:
+            theta (float): _description_
+            V (float): domain volume
+            M (float): number of classes
+            D (float, optional): Impeler diameter. Defaults to None.
+            Nstar (float, optional): Impeler revolutions. Defaults to None.
+        """
         self.theta = theta
         self.V = V
         self.M = M
         self.D = D
         self.Nstar = Nstar
+        # TODO: create pipe diameter Dp?
