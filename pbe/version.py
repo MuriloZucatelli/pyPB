@@ -25,31 +25,31 @@ CLASSIFIERS = ["Development Status :: 3 - Alpha",
                "Topic :: Scientific/Engineering"]
 
 # Description should be a one-liner:
-description = "pyfd: family of support scripts for fluid dynamics"
+description = "pyPB: Scripts for population balance in fluid dynamics"
 # Long description will go up on the pypi page
 long_description = """
 
-pyfd
+pyPB
 ========
 
 """
 
-NAME = "pyfd"
-MAINTAINER = "Robert Sawko, Marcin Traczyk"
-MAINTAINER_EMAIL = "robertsawko@gmail.com"
+NAME = "pyPB"
+MAINTAINER = "Murilo Zucatelli Elias"
+MAINTAINER_EMAIL = "murilozucatelli@gmail.com"
 DESCRIPTION = description
 LONG_DESCRIPTION = long_description
 URL = ""
 DOWNLOAD_URL = ""
 LICENSE = ""
-AUTHOR = "Robert Sawko, Marcin Traczyk"
+AUTHOR = "Murilo Zucatelli Elias"
 AUTHOR_EMAIL = "robertsawko@gmail.com"
 PLATFORMS = "OS Independent"
 MAJOR = _version_major
 MINOR = _version_minor
 MICRO = _version_micro
 VERSION = __version__
-PACKAGES = ['pyfd',
-            'pyfd.tests']
+PACKAGES = ['pyPB',
+            'pyPB.tests']
 PACKAGE_DATA = {'pyfd': [pjoin('data', '*')]}
-REQUIRES = ["numpy"]
+REQUIRES = ["numpy", "scipy"]

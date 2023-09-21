@@ -30,7 +30,7 @@ def error_function(C, experiment: angeli_experiment):
     mp[3] *= 1e11
     pbe_solutions = [
         AngeliSolution(
-            M=30, v0=v0, U=experiment.U, phi=experiment.phi, theta=experiment.theta,
+            M=20, v0=v0, U=experiment.U, phi=experiment.phi, theta=experiment.theta,
             model_parameters=mp)
         for v0 in v0s]
     error = sum(
@@ -57,7 +57,7 @@ for i in range(5):
 # so
 s = 0.407
 c0 = [0.4 * s**(-1./3.), 0.08 / s**(-2./3.), 2.8 * s**(-1./3.), 1.83 * s]  # CT original constants
-
+# optimo [0.56013258 0.29009193 3.78127554 0.75804275]
 results = []
 for e in experiments:
     print(e)
@@ -66,7 +66,7 @@ for e in experiments:
     Copt = minimize(
         lambda c: error_function(c, e), c0,
         method='L-BFGS-B', bounds=[(0, None)] * 4,
-        options={'disp': False, 'ftol': 0.01, 'maxiter': 2000})
+        options={'disp': False, 'ftol': 0.001, 'gtol': 1e-8, 'maxiter': 5})
     res['best_fit'] = Copt.x
     res['setup'] = {'U': e.U, 'phi': e.phi, 'd32': e.d32, 'theta': e.theta}
     results.append(res)

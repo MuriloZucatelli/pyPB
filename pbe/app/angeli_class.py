@@ -16,7 +16,6 @@ class AngeliSolution:
             M=10,        # number of classes
             U=1.10,      # average fluid velocity
             phi=0.091,   # [1] holdup
-            vmax=8e-11,  # Maximum droplet volume [m³]
             v0=5e-10,    # [m³]
             model_parameters=None,
             theta=600.):
@@ -27,23 +26,22 @@ class AngeliSolution:
         time = arange(0.0, 3600, 0.5)  # Tempo de integração
 
         # oil
-        self.continuousphase = ContinuosPhase(
-            name='oil',
-            rho=801.,       # [kg/m³]
-            mu=1.6e-3)      # [P = kg * m^-1 s^-1]  dynamic viscosity
+        self.cp = ContinuosPhase(name='oil',
+                                 rho=801.,    # [kg/m³]
+                                 mu=1.6e-3)   # [P = kg * m^-1 s^-1]  dynamic viscosity
 
-        self.continuousphase.epsilon = calc_epsilon(U,
-                                                    self.D,
-                                                    self.continuousphase.mu,
-                                                    self.continuousphase.rho)
+        self.cp.epsilon = calc_epsilon(U,
+                                       self.D,
+                                       self.cp.mu,
+                                       self.cp.rho)
 
         # water solution
-        self.dispersephase = DispersePhase(name='water solution',
-                                           phi=self.phi, rho=1000.,  # [kg/m3]
-                                           sigma=1.7e-2,  # [P = kg * m^-1 s^-1]
-                                           v_max=v0 * 3,
-                                           v0=v0,
-                                           sigma0=v0 / 10)
+        self.dp = DispersePhase(name='water solution',
+                                phi=self.phi, rho=1000.,  # [kg/m3]
+                                sigma=1.7e-2,  # [P = kg * m^-1 s^-1]
+                                v_max=v0 * 3,
+                                v0=v0,
+                                sigma0=v0 / 10)
 
         self.domain = Domain(theta=theta,
                              V=pi * self.L * (self.D / 2) ** 2,
@@ -59,16 +57,16 @@ class AngeliSolution:
         # Função
         g = breakup.breakupModels(C=self.C,
                                   domain=self.domain,
-                                  cp=self.continuousphase,
-                                  dp=self.dispersephase).gamma
+                                  cp=self.cp,
+                                  dp=self.dp).gamma
         Qf = coalescence.coalescenceModels(C=self.C,
                                            domain=self.domain,
-                                           cp=self.continuousphase,
-                                           dp=self.dispersephase).Qf
-        A0 = DSD.analitico(dp=self.dispersephase).A0
+                                           cp=self.cp,
+                                           dp=self.dp).Qf
+        A0 = DSD.analitico(dp=self.dp).A0
 
         self.moc = MOCSolution(
-            M, time, vmax / M, N0=self.N0, xi0=vmin,
+            M, time, self.dp.v_max / M, N0=self.N0, xi0=vmin,
             beta=beta, gamma=g, Q=Qf, theta=self.domain.theta,
             n0=self.n0, A0=A0)
 
