@@ -1,8 +1,14 @@
 from numpy import genfromtxt, abs, array, pi, set_printoptions
 from scipy.optimize import minimize, differential_evolution
-from pbe.app.angeli_class import AngeliSolution
+import sys
+import os.path as path
+dir = path.dirname(__file__)
+if __name__ == '__main__':
+    sys.path.append(path.abspath(path.join(dir, '..\\..')))
+    from pbe.app.angeli_class import AngeliSolution
+else:
+    from pbe.app.angeli_class import AngeliSolution
 import time
-import os
 import pickle
 set_printoptions(precision=4)
 
@@ -66,11 +72,15 @@ for e in experiments:
     Copt = minimize(
         lambda c: error_function(c, e), c0,
         method='L-BFGS-B', bounds=[(0, None)] * 4,
-        options={'disp': False, 'ftol': 0.001, 'gtol': 1e-8, 'maxiter': 5})
+        options={'disp': False, 
+                 'ftol': 1e-8,   #default: 2.2e-09
+                 'gtol': 1e-6,  # 1e-8 default is 1e-5
+                 'maxls': 100,    # Max line search steps (per iteration). Default is 20.
+                 'maxiter': 1000})  # default: 15000
+                # eps: default 1e-8
     res['best_fit'] = Copt.x
     res['setup'] = {'U': e.U, 'phi': e.phi, 'd32': e.d32, 'theta': e.theta}
     results.append(res)
 
-dir = os.path.dirname(__file__)
-with open(os.path.join(dir, 'angeli_optimization_results.pickle'), 'wb') as f:
+with open(path.join(dir, 'angeli_optimization_results.pickle'), 'wb') as f:
     pickle.dump(results, f)
