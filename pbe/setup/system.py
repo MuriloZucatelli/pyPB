@@ -1,5 +1,6 @@
 """Fluid system classes
 """
+from numpy import pi
 
 
 class Fluid:
@@ -32,6 +33,7 @@ class ContinuosPhase(Fluid):
         """
         super(ContinuosPhase, self).__init__(name, rho, mu)
         self.epsilon = epsilon
+        self.nu = rho/mu
 
 
 class DispersePhase(Fluid):
@@ -90,3 +92,20 @@ class Domain:
         self.D = D
         self.Nstar = Nstar
         # TODO: create pipe diameter Dp?
+
+
+class droplet:
+    def __init__(self, v: float) -> float:
+        self.v = v
+
+    @property
+    def v2d(self) -> float:
+        """Transform volume of droplet to a spherical type diameter
+
+        Args:
+            v (float): volume
+
+        Returns:
+            float: droplet spherical mean diameter
+        """
+        return (6 * self.v / pi) ** (1.0 / 3)

@@ -10,18 +10,17 @@ from pbe.models import breakup, coalescence, DSD
 #       nem em domain ou phase continua ou dispersa
 
 
-class AngeliSolution:
+class MitreSolution:
     def __init__(
             self,
             M=10,        # number of classes
             U=1.10,      # average fluid velocity
+            dP = None,   # pressure drop
             phi=0.091,   # [1] holdup
             v0=5e-10,    # [m³]
             model_parameters=None,
             theta=600.):
 
-        self.D = 0.024  # [m] pipe diameter diameter
-        self.L = 9.5    # [m] length diameter
         self.phi = phi
         time = arange(0.0, 3600, 0.5)  # Tempo de integração
 

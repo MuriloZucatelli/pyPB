@@ -14,6 +14,31 @@ class SteadyStateSolution:
     Based on Brooks and Hidy uniform discretisation
 
     """
+
+    def __init__(self, N0, t, xi0, beta=None, gamma=None, Q=None, theta=None,
+                 pdf="number"):
+        self.number_of_classes = N0.shape[0]
+        # Kernels setup
+        self.beta = beta  # Daughter particle distribution
+        self.gamma = gamma  # Breakup frequency
+        self.Q = Q  #
+        # inflow and outflow replaced with relaxation to equilibrium
+        # process with relaxation time equal to residence time theta
+        self.theta = theta
+        self.N0 = N0
+        # choose pdf formulation: number or number density
+        self.pdf = pdf
+        # set minimum and maximum number of iteration:
+        self.setIter(10, 100)
+        self.setMassTol(0.6, 1.4)
+        self.setTime(np.arange(0, 0.5, 0.1))
+        self.setError(1e-03)
+        # Uniform grid
+        self.xi = xi0 + xi0 * arange(self.number_of_classes)
+        self.delta_xi = xi0
+        self.N0 = N0
+        #self.solution = self.solve(N0)
+
     def RHS(
         self, N, t
     ):
@@ -91,26 +116,3 @@ class SteadyStateSolution:
         #return N0
         self.solution = N0
 
-    def __init__(self, N0, t, xi0, beta=None, gamma=None, Q=None, theta=None,
-                 pdf="number"):
-        self.number_of_classes = N0.shape[0]
-        # Kernels setup
-        self.beta = beta  # Daughter particle distribution
-        self.gamma = gamma  # Breakup frequency
-        self.Q = Q  #
-        # inflow and outflow replaced with relaxation to equilibrium
-        # process with relaxation time equal to residence time theta
-        self.theta = theta
-        self.N0 = N0
-        # choose pdf formulation: number or number density
-        self.pdf = pdf
-        # set minimum and maximum number of iteration:
-        self.setIter(10, 100)
-        self.setMassTol(0.6, 1.4)
-        self.setTime(np.arange(0, 0.5, 0.1))
-        self.setError(1e-03)
-        # Uniform grid
-        self.xi = xi0 + xi0 * arange(self.number_of_classes)
-        self.delta_xi = xi0
-        self.N0 = N0
-        #self.solution = self.solve(N0)
