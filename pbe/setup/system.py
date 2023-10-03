@@ -4,10 +4,10 @@ from numpy import pi
 
 
 class Fluid:
-    """ Definição basica do fluido
-    """
+    """Definição basica do fluido"""
+
     def __init__(self, name: str, rho: float, mu: float) -> None:
-        """ Inicializa o fluido
+        """Inicializa o fluido
 
         Args:
             name (str): nome
@@ -20,8 +20,8 @@ class Fluid:
 
 
 class ContinuosPhase(Fluid):
-    """Fase continua
-    """
+    """Fase continua"""
+
     def __init__(self, name: str, rho: float, mu: float, epsilon: float = None) -> None:
         """Continuos phase properties
 
@@ -33,16 +33,25 @@ class ContinuosPhase(Fluid):
         """
         super(ContinuosPhase, self).__init__(name, rho, mu)
         self.epsilon = epsilon
-        self.nu = rho/mu
+        self.nu = rho / mu
 
 
 class DispersePhase(Fluid):
-    """Properties of the dispersed phase
-    """
-    def __init__(self, name: str, phi: float, rho: float, sigma: float,
-                 v_max: float, v0: float, sigma0: float, mu: float = None):
-        """ Cria o objeto de fase dispersa
-        
+    """Properties of the dispersed phase"""
+
+    def __init__(
+        self,
+        name: str,
+        phi: float,
+        rho: float,
+        sigma: float,
+        v_max: float,
+        v0: float,
+        sigma0: float,
+        mu: float = None,
+    ):
+        """Cria o objeto de fase dispersa
+
         Args:
             name (str)         name
             phi (float)        volume fraction
@@ -61,23 +70,29 @@ class DispersePhase(Fluid):
 
 
 class Domain:
-    """ domainProperties:
-        description: is a dictionary with properties of the computational
-        domain and discretization parameters
-        Required fields:
-        theta       mean residence time
-        M           number of classes used
-        V           domain volume
-        D           Possible impeller diameter [m]
-        Nstar       Possible revolutions per second, sec-1
+    """domainProperties:
+    description: is a dictionary with properties of the computational
+    domain and discretization parameters
+    Required fields:
+    theta       mean residence time
+    M           number of classes used
+    V           domain volume
+    D           Possible impeller diameter [m]
+    Nstar       Possible revolutions per second, sec-1
+    w           Possible width from valve
+    U           Possible fluid velocity
     """
-    def __init__(self,
-                 theta: float,
-                 V: float,
-                 M: float,
-                 D: float = None,
-                 Nstar: float = None) -> None:
-        """ domainProperties
+
+    def __init__(
+        self,
+        theta: float,
+        V: float,
+        M: float,
+        D: float = None,
+        Nstar: float = None,
+        w: float = None,
+    ) -> None:
+        """domainProperties
 
         Args:
             theta (float): _description_
@@ -85,13 +100,24 @@ class Domain:
             M (float): number of classes
             D (float, optional): Impeler diameter. Defaults to None.
             Nstar (float, optional): Impeler revolutions. Defaults to None.
+            w (float) : Width of channel (Mitre)
         """
         self.theta = theta
         self.V = V
         self.M = M
         self.D = D
         self.Nstar = Nstar
-        # TODO: create pipe diameter Dp?
+        self.w = w
+
+
+class BoundaryInitial:
+    def __init__(self, V) -> None:
+        """_summary_
+
+        Args:
+            V (float): velocity
+        """
+        self.V = V
 
 
 class droplet:

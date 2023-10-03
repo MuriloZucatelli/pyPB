@@ -1,7 +1,12 @@
 from numpy import arange, linspace, piecewise
 from itertools import cycle
-from pyfd.pbe.moc import MOCSolution
-from pyfd.tests.test_moc import blatz_and_tobolsky_pbe_solution
+import sys
+import os.path as path
+dir = path.dirname(__file__)
+if __name__ == "__main__":
+    sys.path.append(path.abspath(path.join(dir, "..\\")))
+from pbe.solvers.moc import MOCSolution
+from tests.test_moc import blatz_and_tobolsky_pbe_solution
 import matplotlib.pyplot as plt
 
 """

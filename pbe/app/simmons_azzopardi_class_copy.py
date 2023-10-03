@@ -41,7 +41,7 @@ class SASolution:
                              M=M)
 
         self.set_parameters(model_parameters)
-        self.n0()
+        self.nf0()
         vmin = None
 
         # Função frequencia de quebra
@@ -59,9 +59,9 @@ class SASolution:
         A0 = DSD.analitico(dp=self.dp).A0
 
         self.moc = MOCSolution(M, time, self.dp.v_max / M, 
-                               N0=self.N0, xi0=vmin, beta=beta,
+                               n0=self.n0, xi0=vmin, beta=beta,
                                gamma=g, Q=Qf, theta=self.domain.theta,
-                               n0=self.n0, A0=A0)
+                               nf0=self.nf0, A0=A0)
 
     def set_parameters(self, model_parameters):
         if model_parameters is None:
@@ -69,11 +69,11 @@ class SASolution:
         else:
             self.C = model_parameters
 
-    def N0(self, v):              # total number of drops?
+    def n0(self, v):              # total number of drops?
         return 0 * v
 
-    def n0(self):
-        self.n0 = self.domain.V / self.domain.theta
+    def nf0(self):
+        self.nf0 = self.domain.V / self.domain.theta
 
     @property
     def pbe_phi(self):

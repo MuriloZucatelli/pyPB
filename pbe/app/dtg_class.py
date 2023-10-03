@@ -10,32 +10,24 @@ from pbe.models import breakup, coalescence, DSD
 #       nem em domain ou phase continua ou dispersa
 
 
-class MitreSolution:
+class DTGSolution:
     def __init__(
         self,
         M=10,  # number of classes
         U=1.10,  # average fluid velocity
-        dP=None,  # pressure drop
-        phi=0.091,  # [1] holdup
+        phi=0.1,  # [1] holdup
         v0=5e-10,  # [m³]
         model_parameters=None,
         theta=600.0,
-        omega=0.05,
     ):
+        self.D = 0.02095  # [m] pipe diameter diameter
+        self.L = 2.5  # [m] length diameter
         self.phi = phi
-        self.omega = omega
-        self.Ve = (
-            2 * (0.001 * 0.005 * 0.005)
-            + omega * 0.005 * 0.005
-            + (0.002 * 0.005 * 0.005)
-            + (0.003 * 0.005 * 0.005)
-        )  # effetive volume in the domain
-        self.theta = self.Ve / Q
-        time = arange(0.0, 3600, 0.5)  # Tempo de integração
+        time = arange(0.0, 10, 0.1)  # Tempo de integração
 
         # oil
         self.cp = ContinuosPhase(
-            name="oil", rho=865.0, mu=1.15e-2  # [kg/m³]
+            name="oil", rho=873.0, mu=1.21e-1  # [kg/m³]
         )  # [P = kg * m^-1 s^-1]  dynamic viscosity
 
         self.cp.epsilon = calc_epsilon(U, self.D, self.cp.mu, self.cp.rho)
@@ -45,7 +37,7 @@ class MitreSolution:
             name="water solution",
             phi=self.phi,
             rho=1000.0,  # [kg/m3]
-            sigma=2.23e-2,  # [P = kg * m^-1 s^-1]
+            sigma=1.7e-2,  # [P = kg * m^-1 s^-1]
             v_max=v0 * 3,
             v0=v0,
             sigma0=v0 / 10,
@@ -54,22 +46,20 @@ class MitreSolution:
         self.domain = Domain(theta=theta, V=pi * self.L * (self.D / 2) ** 2, M=M)
 
         self.set_parameters(model_parameters)
-        self.n0()
+        self.nf0()
         vmin = None
 
         # Função distribuição de gotas filhas
-        beta = breakup.DDSD.mitre_beta
+        beta = breakup.breakupModels.beta
 
         # Função frequencia de quebra
         g = breakup.breakupModels(
-            name="mitre", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
+            C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
         ).gamma
-
         # Função frequencia de Coalescencia
         Qf = coalescence.coalescenceModels(
-            name="mitre", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
-        ).Qf
-        
+            name=coulaloglou, C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
+        ).Q
         # Função distribuição inicial
         A0 = DSD.analitico(dp=self.dp).A0
 
@@ -77,13 +67,13 @@ class MitreSolution:
             M,
             time,
             self.dp.v_max / M,
-            N0=self.N0,
+            n0=self.n0,
             xi0=vmin,
             beta=beta,
             gamma=g,
             Q=Qf,
             theta=self.domain.theta,
-            nf0=self.n0,
+            nf0=self.nf0,
             A0=A0,
         )
 
@@ -93,11 +83,11 @@ class MitreSolution:
         else:
             self.C = model_parameters
 
-    def N0(self, v):  # total number of drops?
+    def n0(self, v):
         return 0 * v
 
-    def n0(self):
-        self.n0 = self.domain.V / self.domain.theta
+    def nf0(self):
+        self.nf0 = self.domain.V / self.domain.theta
 
     @property
     def pbe_phi(self):

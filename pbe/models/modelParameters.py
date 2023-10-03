@@ -19,3 +19,15 @@ class modelParameter:
         self.varsigma = varsigma
         self.modelparameters = {'Cb': Cb, 'Cc': Cc, 'Ce': Ce, 'varsigma': varsigma}
         #to get in a list: list(modelparameters.values())
+
+    @property
+    def parameters(self):
+        #return [self._create_employee(**data) for data in self._employees]
+        return list(self.modelparameters.values())
+
+    def _add_parameters(self, *args):
+        #self.modelparameters.update()
+        pass
+
+    # TODO: escrever função para adicionar parametros novos. 
+    # TODO função para retornar modelparameters em lista

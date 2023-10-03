@@ -9,30 +9,30 @@ This module contains coalescence models objects for population balance equation
 # Importing dependencies
 from numpy import arange, sqrt, exp, pi, log
 from pbe.setup.system import Domain, ContinuosPhase, DispersePhase, droplet
-from pbe.models import modelParameters
+from pbe.models.modelParameters import modelParameter
 
 
 class coalescenceModels:
     def __init__(
         self,
-        C: list,
         name: str,
+        C: list,
         domain: Domain,
         cp: ContinuosPhase,
         dp: DispersePhase,
-        mp: modelParameters = None,
+        mp: modelParameter = None,
         interface: str = "rigid_interface",
     ) -> None:
         """Classe de modelos de coalescencia
 
         Args:
             C (list): parameters.\n
-            name (str).\n
+            name (str). coulaloglou, alopaeus, mitre ou chesters \n
             domain (Domain).\n
             cp (ContinuosPhase).\n
             dp (DispersePhase).\n
             mp (modelParameters, optional): Defaults to None.\n
-            interface (str, optional): droplet interface. Defaults to "rigid_interface". 
+            interface (str, optional): droplet interface. Defaults to "rigid_interface".
                 Options: rigid_interface"  "deformable" or "partially_mobile"\n
         """
         self.C = C
@@ -42,7 +42,19 @@ class coalescenceModels:
         self.dp = dp
         self.interface = interface
 
-    def Qf(self, v1: float = None, v2: float = None) -> float:
+        match name:
+            case "coulaloglou":
+                self.Q = self.coulaloglou_Q
+            case "alopaeus":
+                self.Q = None
+            case "mitre":
+                self.Q = self.mitre_Q
+            case "chesters":
+                self.Q = self.chesters_Q
+            case None:
+                self.Q = None
+
+    def coulaloglou_Q(self, v1: float = None, v2: float = None) -> float:
         """Coalescence rate from coulaloglou and Tavlarides
 
         Args:
@@ -73,7 +85,7 @@ class coalescenceModels:
             )
         )
 
-    def Qf2(self, v1: float = None, v2: float = None) -> float:
+    def coulaloglou_Q_vessel(self, v1: float = None, v2: float = None) -> float:
         """Coalescence rate
 
         Args:
@@ -121,9 +133,7 @@ class coalescenceModels:
 
         d1 = (6 * v1 / pi) ** (1.0 / 3)
         d2 = (6 * v2 / pi) ** (1.0 / 3)
-        d_ratio = (v1 ** (1.0 / 3) * v2 ** (1.0 / 3)) / (
-            v1 ** (1.0 / 3) + v2 ** (1.0 / 3)
-        )
+
         # equivalent diameter in the collision of drops i and j
         deq = (0.5 * (d1 ** (-1) + d2 ** (-1))) ** (-1)
         # collision cross-section of particles with particles d and d'
@@ -145,10 +155,10 @@ class coalescenceModels:
         # depends on the type of droplet interface
         if self.interface == "rigid_interface":
             if Ce is None:
-                hi = 1
-                eficiency = exp(-1 / 4 * log(1 / hf))  # TODO revisar #HACK
+                eficiency = exp(-1 / 4 * log(1 / hf))  # TODO revisar
             else:
-                eficiency = exp(-Ce / 4 * log(hi / hf))  # TODO revisar 
+                hi = 1
+                eficiency = exp(-Ce / 4 * log(hi / hf))  # TODO revisar
 
         elif self.interface == "deformable" or self.interface == "partially_mobile":
             Caeq = (
@@ -164,6 +174,63 @@ class coalescenceModels:
                 * Caeq ** (3 / 2)
                 * (deq / hf)
             )
+        else:
+            eficiency = 0  # TODO revisar
+
+        return coli_freq * eficiency
+
+    def mitre_Q(self, v1: float = None, v2: float = None) -> float:
+        """Coalescence frequency from Mitre Equation 40.
+           modified because all droplets were in turbulent dissipation size range
+
+        Args:
+            v1 (float): volume of droplet i
+            v2 (float): volume of droplet j
+        Returns:
+            float: _description_
+        """
+        # C3 = self.C[2]
+        # C4 = self.C[3]
+        Cc = self.mp.Cc
+        Ce = self.mp.Ce
+
+        d1 = (6 * v1 / pi) ** (1.0 / 3)
+        d2 = (6 * v2 / pi) ** (1.0 / 3)
+
+        # equivalent diameter in the collision of drops i and j
+        deq = (0.5 * (d1 ** (-1) + d2 ** (-1))) ** (-1)
+
+        # Collision frequency
+        coli_freq = Cc * pi / 8 * (d1 + d2) ** 3 * sqrt(self.cp.epsilon / self.cp.nu)
+
+        A = 0.6e-20  # Joules
+        hf = A * deq / (16 * pi * self.dp.sigma)
+
+        # Models for coalescence eficience
+        # depends on the type of droplet interface
+        if self.interface == "rigid_interface":
+            if Ce is None:
+                eficiency = exp(-1 / 4 * log(1 / hf))  # TODO revisar
+            else:
+                hi = 1
+                eficiency = exp(-Ce / 4 * log(hi / hf))  # TODO revisar
+
+        elif self.interface == "deformable" or self.interface == "partially_mobile":
+            Caeq = (
+                self.cp.mu
+                * sqrt(self.cp.epsilon / self.cp.nu)
+                * deq
+                / (2 * self.dp.sigma)
+            )
+            eficiency = exp(
+                -Ce
+                * (sqrt(3) / 8)
+                * (self.dp.mu / self.cp.mu)
+                * Caeq ** (3 / 2)
+                * (deq / hf)
+            )
+        else:
+            eficiency = 0  # TODO revisar
 
         return coli_freq * eficiency
 

@@ -11,6 +11,8 @@ from pbe.setup.system import DispersePhase
 
 
 class analitico:
+    """Analitical probability number density functions
+    """
     def __init__(self, dp: DispersePhase) -> None:
         self.dp = dp
 
@@ -21,7 +23,7 @@ class analitico:
             v (float): droplet volume
 
         Returns:
-            density number distribuition
+            probability density number distribuition
         """
         return \
             self.dp.phi / (self.dp.v0 * self.dp.sigma0 * sqrt(2 * pi)) * \

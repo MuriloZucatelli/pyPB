@@ -1,6 +1,8 @@
 from numpy import arange, zeros, pi, zeros_like, dot, array
 from numpy import sum as nsum
 from scipy.integrate import odeint, quad
+import matplotlib.pyplot as plt
+import numpy as np
 
 """
 Method of classes
@@ -9,76 +11,93 @@ Method of classes
 
 class MOCSolution:
     """
-    Based on Brooks and Hidy uniform discretisation
+    Based on Brocks and Hidy uniform discretisation 1970
 
     """
 
     def __init__(
         self,
-        number_of_classes,
+        Nclasses,
         t,
         dxi,
+        n0=None,
         N0=None,
         xi0=None,
         beta=None,
         gamma=None,
         Q=None,
+        nu=None,
         theta=None,
-        n0=None,
+        nf0=None,
         A0=None,
     ):
-        """Solution by method of classes
+        """Solution by method of classes based on Coulaloglou & Tavlarides 1977
 
         Args:
-            number_of_classes (_type_): number of classes
+            Nclasses (_type_): number of classes
             t (_type_): time span
             dxi (_type_): grid size
-            N0 (_type_, optional): _description_. Defaults to None.
-            xi0 (_type_, optional): _description_. Defaults to None.
+            N0 (_type_): Number concentration
+                number of droplets by volume of disperse phase
+            n0 (_type_, optional): number density function.
+                initial distribuition number of droplets per m³ of discrete phase. Defaults to None.
+            xi0 (_type_, optional): initial droplet volume. Defaults to None.
             beta (_type_, optional): DDSD. Defaults to None.
             gamma (_type_, optional): Breakup frequency. Defaults to None.
             Q (_type_, optional): Coalescence frequency. Defaults to None.
             theta (_type_, optional): mean residence time. Defaults to None.
-            n0 (_type_, optional): _description_. Defaults to None.
-            A0 (_type_, optional): _description_. Defaults to None.
+            nu(_type, optional): number of droplets formed of a break of a droplet
+            nf0 (_type_, optional): number feed rate of drops, sec-1. Defaults to None.
+            A0 (_type_, optional): probability density of droplet size in the feed . Defaults to None.
         """
-        self.number_of_classes = number_of_classes
+        self.Nclasses = Nclasses
+
         if xi0 is None:
             self.xi0 = dxi  # define o ξ0, volume minimo
         else:
             self.xi0 = xi0
-        self.n0 = n0  # ??
+
+        self.nf0 = nf0
         # inflow and outflow replaced with relaxation to equilibrium
         # process with relaxation time equal to residence time theta
         self.theta = theta  # mean residence time
         # Uniform grid
         self.xi = self.xi0 + dxi * arange(
-            self.number_of_classes
+            self.Nclasses
         )  # vetor com as classes vk ξ, dxi é o parametro k
+        # TODO: implement non uniform grid
         xi_len = len(self.xi)
-        if N0 is None:
+
+        # integration of initial number density function to obtain
+        # number concentration N0
+        # Number of droplets per m³ of discrete phase (number concentration)
+        if n0 is None and N0 is None:
             N0 = zeros_like(self.xi)
-        else:
+        elif N0 is None:
             N0 = array(
                 [
-                    quad(N0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
-                    for i in range(number_of_classes)
+                    quad(n0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
+                    for i in range(Nclasses)
                 ]
-            )  # number concentration???  integração para o delta de dirac
+            )  # initial number concentration
+            # TODO: this needs to be adapted for non uniform discretization, where dxi is not constant
 
-        self.nu = 2.0  # Binary breakup
+        plt.plot(self.xi, N0, label=str(Nclasses))
+        plt.legend()
+        if nu is None:
+            self.nu = 2.0  # Binary breakup
+
         # Kernels setup avaliando a função beta e gama para cada classe
         if gamma is not None and beta is not None:
             self.gamma = gamma(self.xi)
-            self.betadxi = zeros(
-                (self.number_of_classes, self.number_of_classes)
-            )  # β(ξ,ξ′j)
+            self.betadxi = zeros((self.Nclasses, self.Nclasses))  # β(ξ,ξ′j)
             for i in range(1, xi_len):
                 for j in range(i):
                     self.betadxi[j, i] = beta(self.xi[j], self.xi[i])
                 self.betadxi[:, i] = self.betadxi[:, i] / nsum(
                     self.betadxi[:, i]
                 )  # normalizando apenas a coluna
+                # betadxi substitui beta * (v_i+1 - vi)
 
         else:
             self.gamma = None
@@ -104,7 +123,7 @@ class MOCSolution:
             self.A0 = array(
                 [
                     quad(A0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
-                    for i in range(number_of_classes)
+                    for i in range(Nclasses)
                 ]
             )
         # Solve procedure
@@ -121,26 +140,36 @@ class MOCSolution:
 
         if self.Q is not None:
             Cd = zeros_like(dNdt)
-            for i in arange(self.number_of_classes // 2):
-                ind = slice(i, self.number_of_classes - i - 1)
+            for i in arange(self.Nclasses // 2):
+                ind = slice(i, self.Nclasses - i - 1)
                 Cb = self.Q[i, ind] * N[i] * N[ind]
                 # Death coalescence term
                 Cd[i] += nsum(Cb)
                 # Birth coalescence term
-                Cd[(i + 1): (self.number_of_classes - i - 1)] += Cb[1:]
+                Cd[(i + 1) : (self.Nclasses - i - 1)] += Cb[1:]
                 Cb[0] = 0.5 * Cb[0]
-                dNdt[(2 * i + 1):] += Cb
+                dNdt[(2 * i + 1) :] += Cb
 
             dNdt -= Cd
         if self.theta is not None:
-            dNdt += self.n0 * self.A0 - N / self.theta  #dNdt-= (N - self.N0) / self.theta??
+            dNdt += self.nf0 * self.A0 - N / self.theta
 
         # print('Time = {0:g}'.format(t))
         return dNdt
 
     @property
     def number_density(self):
-        return self.N / self.xi0  # N/dV, TODO xi0 só é igual a dV quando xi0=dxi
+        """Calculate de number density n or f in some authors
+           n is the number of droplets of a size range from di to di+1 per
+           unit volume of discrete phase
+
+           Units: 1 / (m³ * m³)
+
+        Returns:
+            float: number density
+        """
+        # TODO xi0 só é igual a dV quando xi0=dxi
+        return self.N / self.xi0  # N/dV
 
     @property
     def d32(self):
@@ -153,8 +182,29 @@ class MOCSolution:
 
     @property
     def total_volume(self):
-        return nsum(self.N[-1] * self.xi)  # integral de NiVi, N[-1]?
+        """Calculate de total volume concentration of discrete phase
+            $alpha$ = \\sum $alpha_i = \\sum (N_i v_i)$
+        Returns:
+            float: total volume concentration
+        """
+        return nsum(self.N[-1] * self.xi)  # integral de NiVi, N[-1] is last time
+
+    @property
+    def initial_total_volume(self):
+        """Calculate de total volume concentration of discrete phase
+            $alpha$ = \\sum $alpha_i = \\sum (N_i v_i)$
+        Returns:
+            float: total volume concentration
+        """
+        return nsum(self.N[0] * self.xi)  # integral de NiVi, N[0] is initial time
 
     @property
     def total_numbers(self):
+        """Calculate the total number of droplets per unit volume of discrete phase
+           N
+           Units: 1 / m³
+
+        Returns:
+            float: number concentration
+        """
         return nsum(self.N, axis=1)  # total Droplets per m³

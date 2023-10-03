@@ -1,6 +1,12 @@
 from numpy import genfromtxt, linspace
 import pickle
 import os
+import sys
+import os.path as path
+
+dir = path.dirname(__file__)
+if __name__ == "__main__":
+    sys.path.append(path.abspath(path.join(dir, "..\\..")))
 from pbe.setup.helpers import set_plt_params
 from matplotlib.pyplot import figure
 import itertools
