@@ -84,7 +84,7 @@ def scott_pbe_solution3(xi, t, C=1, N0=1, xi0=1):
         #/ (T**0.5 * (T + 2)**1.5)
     phi3 = sum([
         (x * 2)**(2 * (k + 1)) / gamma(2 * (k + 1)) * (T/(T+2))**k
-        for k in range(100)
+        for k in range(90)
         ]) * 4.0 * exp(- 2 * x) / (x * (T + 2)**2)
     return N0 / xi0 * phi3
 

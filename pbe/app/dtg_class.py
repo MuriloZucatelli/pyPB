@@ -1,7 +1,13 @@
+import pandas as pd
+
+# from .classes import FLOW
 from numpy import arange, pi
-from pbe.setup.system import Domain, DispersePhase, ContinuosPhase
+from pbe.setup.system import Domain, DispersePhase, ContinuosPhase, FLOW
 from pbe.solvers.moc import MOCSolution
-from pbe.models import breakup, coalescence, DSD
+from pbe.models import breakup, coalescence
+from os.path import join
+from pathlib import Path
+from os import environ
 
 # TODO: implementar uma classe que ja traz todos os parâmetros constantes
 #       do caso, pra não precisar, por exemplo, de obter o objeto
@@ -23,7 +29,7 @@ class DTGSolution:
         self.D = 0.02095  # [m] pipe diameter diameter
         self.L = 2.5  # [m] length diameter
         self.phi = phi
-        time = arange(0.0, 10, 0.1)  # Tempo de integração
+        time = arange(0.0, 10, 0.01)  # Tempo de integração
 
         # oil
         self.cp = ContinuosPhase(
@@ -37,10 +43,10 @@ class DTGSolution:
             name="water solution",
             phi=self.phi,
             rho=1000.0,  # [kg/m3]
-            sigma=1.7e-2,  # [P = kg * m^-1 s^-1]
-            v_max=v0 * 3,
-            v0=v0,
-            sigma0=v0 / 10,
+            sigma=4.5e-3,  # [P = kg * m^-1 s^-1]
+            # v_max=v0 * 3,
+            # v0=v0,
+            # sigma0=v0 / 10,
         )
 
         self.domain = Domain(theta=theta, V=pi * self.L * (self.D / 2) ** 2, M=M)
@@ -50,18 +56,19 @@ class DTGSolution:
         vmin = None
 
         # Função distribuição de gotas filhas
-        beta = breakup.breakupModels.beta
+        beta = breakup.DDSD.coulaloglou_beta
 
         # Função frequencia de quebra
         g = breakup.breakupModels(
-            C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
+            name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
         ).gamma
         # Função frequencia de Coalescencia
         Qf = coalescence.coalescenceModels(
-            name=coulaloglou, C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
+            name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
         ).Q
-        # Função distribuição inicial
-        A0 = DSD.analitico(dp=self.dp).A0
+
+        # Initial probability density function distribuition
+        # A0 = DSD.analitico(dp=self.dp).A0
 
         self.moc = MOCSolution(
             M,
@@ -73,8 +80,6 @@ class DTGSolution:
             gamma=g,
             Q=Qf,
             theta=self.domain.theta,
-            nf0=self.nf0,
-            A0=A0,
         )
 
     def set_parameters(self, model_parameters):
@@ -115,3 +120,49 @@ def calc_epsilon(U: float, D: float, mu: float, rho: float):
     epsilon = 0.09 * k ** (3.0 / 2.0) / L_t
 
     return epsilon
+
+
+"""
+    Classes to import flow sensor and DSD measures
+"""
+
+
+class import_flow_DSD:
+    def __init__(self, folder: str) -> None:
+        self.folder = folder
+        f1 = join(folder, "flow")
+        # Le os dados externos (Tipo,Weber,Concentração,...)
+        df1 = pd.read_excel(f1, sheet_name="flow_ext")
+        # Le os dados de media e desvio padrao (Tipo,Weber,Concentração,...)
+        df2 = pd.read_excel(f1, sheet_name="flow_media")
+        df3 = pd.read_excel(f1, sheet_name="flow_std")
+        # le os dados do circuito (P,T,V,...)
+        df4 = pd.read_excel(f1, sheet_name="flow")
+
+        self.flow = FLOW(flow=df4, flow_ext=df1, flow_mean=df2, flow_std=df3)
+
+        f2 = join(folder, "DTG")
+        self.DTG = pd.read_excel(f2, sheet_name="DTG")
+
+
+class DTG_experiment:
+    def __init__(self, d32=0.32e-03, phi=0.117, U=2.72, theta=600.0):
+        self.phi = phi
+        self.theta = theta
+        self.U = U
+        self.d32 = d32
+
+    def __repr__(self) -> str:
+        phi = "{:.{}f}".format(100 * self.phi, 2)
+        d32 = "{:.{}e}".format(1000 * self.d32, 2)
+        return (
+            f"concentration {phi}%  |  flow velocity {self.U} m/s  |  "
+            + f"residence time {self.theta} s  |  SMD diameter {d32} mm"
+        )
+
+
+def get_location(folder, os_envi: str = "USERPROFILE"):
+    home = Path.home()
+    path = join(home, folder)
+    path = join(environ['USERPROFILE'], folder)
+    return path

@@ -1,6 +1,7 @@
 """Fluid system classes
 """
 from numpy import pi
+import pandas as pd
 
 
 class Fluid:
@@ -135,3 +136,17 @@ class droplet:
             float: droplet spherical mean diameter
         """
         return (6 * self.v / pi) ** (1.0 / 3)
+
+
+class FLOW:
+    def __init__(
+        self,
+        flow: pd.DataFrame,
+        flow_ext: pd.DataFrame,
+        flow_mean: pd.DataFrame,
+        flow_std: pd.DataFrame,
+    ) -> None:
+        self.flow = flow
+        self.flow_ext = flow_ext
+        self.flow_mean = flow_mean
+        self.flow_std = flow_std

@@ -20,6 +20,7 @@ class MOCSolution:
         Nclasses,
         t,
         dxi,
+        xi=None,
         n0=None,
         N0=None,
         xi0=None,
@@ -37,10 +38,11 @@ class MOCSolution:
             Nclasses (_type_): number of classes
             t (_type_): time span
             dxi (_type_): grid size
-            N0 (_type_): Number concentration
-                number of droplets by volume of disperse phase
+            xi (_type_): grid
             n0 (_type_, optional): number density function.
                 initial distribuition number of droplets per m³ of discrete phase. Defaults to None.
+            N0 (_type_): Number concentration
+                number of droplets by volume of disperse phase
             xi0 (_type_, optional): initial droplet volume. Defaults to None.
             beta (_type_, optional): DDSD. Defaults to None.
             gamma (_type_, optional): Breakup frequency. Defaults to None.
@@ -51,9 +53,10 @@ class MOCSolution:
             A0 (_type_, optional): probability density of droplet size in the feed . Defaults to None.
         """
         self.Nclasses = Nclasses
-
-        if xi0 is None:
-            self.xi0 = dxi  # define o ξ0, volume minimo
+        self.t = t
+        self.dxi = dxi
+        if xi0 is None and isinstance(self.dxi, float):
+            self.xi0 = self.dxi  # define o ξ0, volume minimo
         else:
             self.xi0 = xi0
 
@@ -61,11 +64,19 @@ class MOCSolution:
         # inflow and outflow replaced with relaxation to equilibrium
         # process with relaxation time equal to residence time theta
         self.theta = theta  # mean residence time
+
         # Uniform grid
-        self.xi = self.xi0 + dxi * arange(
-            self.Nclasses
-        )  # vetor com as classes vk ξ, dxi é o parametro k
-        # TODO: implement non uniform grid
+        if isinstance(self.dxi, float):
+            self.xi = self.xi0 + self.dxi * arange(
+                self.Nclasses
+            )  # vetor com as classes vk ξ, dxi é o parametro k
+
+        # Non-uniform grid
+        elif xi is not None:
+            self.xi = xi
+        else:
+            pass
+
         xi_len = len(self.xi)
 
         # integration of initial number density function to obtain
@@ -73,17 +84,16 @@ class MOCSolution:
         # Number of droplets per m³ of discrete phase (number concentration)
         if n0 is None and N0 is None:
             N0 = zeros_like(self.xi)
-        elif N0 is None:
+        elif N0 is None and dxi is not None:
             N0 = array(
                 [
                     quad(n0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
                     for i in range(Nclasses)
                 ]
             )  # initial number concentration
-            # TODO: this needs to be adapted for non uniform discretization, where dxi is not constant
-
-        plt.plot(self.xi, N0, label=str(Nclasses))
-        plt.legend()
+        print(sum(N0))
+        #plt.plot(self.xi, N0, label=str(Nclasses))
+        #plt.legend()
         if nu is None:
             self.nu = 2.0  # Binary breakup
 
@@ -169,7 +179,7 @@ class MOCSolution:
             float: number density
         """
         # TODO xi0 só é igual a dV quando xi0=dxi
-        return self.N / self.xi0  # N/dV
+        return self.N / self.dxi  # N/dV
 
     @property
     def d32(self):
