@@ -101,7 +101,9 @@ class MOCSolution:
         elif N0 is None and isinstance(self.dxi, float):
             N0 = array(
                 [
-                    quad(n0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
+                    quad(n0, self.xi[i] - self.dxi / 2.0, self.xi[i] + self.dxi / 2.0)[
+                        0
+                    ]
                     for i in range(self.M)
                 ]
             )  # initial number concentration
@@ -168,7 +170,7 @@ class MOCSolution:
                 j, k = self.condjbk[i][0], self.condjbk[i][1]
                 vjk = self.xi[j] + self.xi[k]
 
-                for v in vjk:
+                for v, j, k in zip(vjk, j, k):
                     if i < self.M - 1 and i > 0:
                         if v >= self.xi[i] and v <= self.xi[i + 1]:
                             eta[i, j, k] = (self.xi[i + 1] - v) / (
@@ -254,7 +256,6 @@ class MOCSolution:
         Returns:
             float: number density
         """
-        # TODO xi0 só é igual a dV quando xi0=dxi
         return self.N / self.dxi  # N/dV
 
     @property

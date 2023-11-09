@@ -1,4 +1,4 @@
-from numpy import arange, linspace, exp, piecewise, where
+from numpy import arange, linspace, exp, piecewise, where, zeros
 from itertools import cycle
 import sys
 import os.path as path
@@ -27,6 +27,7 @@ Case setup based on:
 """
 
 grids = [20, 40, 80, 160]  # number os classes
+grids = [10]
 time = arange(0.0, 100, 0.001)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
@@ -44,7 +45,10 @@ def n0_init(v):
 
 
 for g in grids:
-    pbe_solutions[g] = MOCSolution(g, time, vmax / g, n0=n0_init, Q=lambda x, y: C)
+    N = zeros(g)
+    N[0] = 2
+    #pbe_solutions[g] = MOCSolution(g, time, vmax / g, n0=n0_init, Q=lambda x, y: C)
+    pbe_solutions[g] = MOCSolution(g, time, vmax / g, N0=N, Q=lambda x, y: C)
 
 totals = dict((n, pbe_solutions[n].total_numbers) for n in pbe_solutions)
 volume = dict((n, pbe_solutions[n].total_volume) for n in pbe_solutions)

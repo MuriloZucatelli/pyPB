@@ -31,9 +31,9 @@ v0 = 7.87011e-05 / 1e9
 r = 1.445124894
 r = 1.5
 
-grids = [10]
 grids = [10, 50, 100, 150, 300]  # number os classes
-time = arange(0.0, 100, 0.1)
+grids = [50]
+time = arange(0.0, 100, 0.001)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
 N0 = 2  # initial Number of droplets
@@ -55,8 +55,12 @@ for g in grids:
         xi = v0 * r ** arange(g)
     elif malha == 2:
         xi = linspace(v0, vmax, g, endpoint=True)
+        xi = (vmax / g) + (vmax / g) * arange(g)
+        N = zeros(g)
+        N[0] = 2
 
-    pbe_solutions[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+    #pbe_solutions[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+    pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
 
 totals = dict((n, pbe_solutions[n].total_numbers) for n in pbe_solutions)
 volume = dict((n, pbe_solutions[n].total_volume) for n in pbe_solutions)
