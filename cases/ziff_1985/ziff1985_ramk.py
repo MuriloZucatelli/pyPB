@@ -1,19 +1,84 @@
-from numpy import genfromtxt, linspace, array, where
-import pickle
-import os
+from numpy import arange, linspace, array, piecewise, zeros, ones, diff, insert, where
+from itertools import cycle
 import sys
 import os.path as path
+import matplotlib.pyplot as plt
+from matplotlib import ticker
 
 dir = path.dirname(__file__)
 if __name__ == "__main__":
     sys.path.append(path.abspath(path.join(dir, "..\\..")))
-from pbe.setup.helpers import set_plt_params
+from pbe.solvers.moc_ramk import MOCSolution
 from pbe.setup.helpers import plt_config2
-from matplotlib.pyplot import figure
-from itertools import cycle
 from tests.test_moc import ziff_total_number_solution, ziff_pbe_solution
-import matplotlib.pyplot as plt
-from matplotlib import ticker
+
+"""
+Case setup based on:
+
+    Ziff, R.M and McGrady, E.D
+    "New solutions to the fragmentation equation", J. Phys A, vol. 18, 1985
+
+    We are looking at case 4. from their paper with kernel F(x, y) = x + y.
+    This corresponds to choosing:
+        beta = 1.0/y,
+        Gamma = y^2,
+    for our kernels.
+
+    Teste com mesma malha utilizada pelo bettersize
+"""
+
+grids = [74]  # Número de classes utilizadas na discretização
+time = arange(0.0, 100.0, 0.01)  # Tempo e passo
+v0 = 7.87011e-05 / 1e9
+dv0 = 2.65025e-05
+r = 1.445124894
+
+# v0 = 1.0
+# r = 1
+caso = 3
+vmax = 1.0
+
+# Caso 4 funcionou bem
+# v0 = 0.0001
+# dv0 = v0
+
+pbe_solutions = dict()
+
+for g in grids:
+    # This is modelling Dirac's delta
+    # initial number density function
+    N0 = zeros(g)
+    N0[-1] = 1
+
+    if caso == 1:
+        xi = v0 * r ** arange(g)
+        dxi = dv0 * r ** arange(g)
+    elif caso == 2:
+        dxi = dv0 * 1.1 ** arange(g)
+        dxi = diff(xi)
+        dxi1 = insert(dxi, 0, dxi[0])
+        dxi2 = insert(dxi, -1, dxi[-1])
+        dxi = (dxi1 + dxi2) / 2
+        dxi[0] = dxi[0] / 2
+
+    elif caso == 3:
+        xi = v0 + v0 * arange(g)
+        xi = linspace(v0, vmax, g, endpoint=True)
+
+    elif caso == 4:
+        xi = v0 * r ** arange(g)
+
+    pbe_solutions[g] = MOCSolution(
+        g,  # number of classes
+        time,
+        xi=xi,
+        N0=N0,
+        beta=lambda x, y: 1.0 / y,  # DDSD
+        gamma=lambda x: x**2,  # breakage rate
+    )
+
+from itertools import cycle
+
 
 # set_plt_params()
 """
@@ -21,16 +86,10 @@ from matplotlib import ticker
 """
 
 
-dir = os.path.dirname(__file__)
-with open(os.path.join(dir, "ziff1985.pickle"), "rb") as f:
-    pbe_solutions = pickle.load(f)
-
-vmax = pbe_solutions["vmax"]
-v0 = pbe_solutions["v0"]
-time = pbe_solutions["time"]
-
-totals = dict((n, pbe_solutions[n].total_numbers) for n in pbe_solutions["grid"])
-volume = dict((n, pbe_solutions[n].total_volume) for n in pbe_solutions["grid"])
+vmax = xi[-1]  # Max volume
+v0 = xi[-1]  # Initial volume
+totals = dict((n, pbe_solutions[n].total_numbers) for n in grids)
+volume = dict((n, pbe_solutions[n].total_volume) for n in grids)
 
 
 def total_numbers():
@@ -54,16 +113,16 @@ def total_numbers():
             label="MOC com M={0}".format(n),
         )
     ax.loglog(time, Na, "--k", linewidth=1.5, label="Analítico")
-    ax.set_ylim(top=100)
+    # ax.set_ylim(top=100)
     ax.legend(loc="best", shadow=True)
     ax.set_xlabel("Tempo [s]")
     ax.set_ylabel("N/N0")
     ax.grid()
     y_formatter = ticker.ScalarFormatter(useOffset=False)
     y_formatter.set_scientific(False)
-    #ax.yaxis.set_major_formatter(y_formatter)
+    # ax.yaxis.set_major_formatter(y_formatter)
     fig.savefig(
-        path.join(dir, "total_number_of_droplets_ziff1985.pdf"),
+        path.join(dir, "total_number_of_droplets_teste_malha.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -83,7 +142,7 @@ def densidade_n():
     markers = cycle(["o", "s", "v", "*", ".", ","])
     v = linspace(0, v0, 10000)
 
-    for n in sorted(pbe_solutions["grid"]):
+    for n in sorted(grids):
         ax.semilogx(
             pbe_solutions[n].xi,  # volume pivot
             pbe_solutions[n].number_density[-1],  # last time
@@ -114,7 +173,7 @@ def densidade_n():
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
     fig.savefig(
-        path.join(dir, "number_density_func_ziff1985.pdf"),
+        path.join(dir, "number_density_teste_malha.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -126,15 +185,16 @@ def densidade_n():
     Densidade numerica para tempos diferentes
 """
 
-def densidade_n_t():
+
+def densidade_n_t(t=100):
     plt_config2(relative_fig_width=0.7)
-    t2 = where(time == 300)[0].squeeze()
+    t2 = where(time == t)[0].squeeze()
     fig = plt.figure()
     ax = fig.gca()
     markers = cycle(["o", "s", "v", "*", ".", ","])
     v = linspace(0, v0, 10000)
 
-    n = pbe_solutions["grid"][-1]
+    n = grids[-1]
     ax.semilogx(
         pbe_solutions[n].xi,  # volume pivot
         pbe_solutions[n].number_density[-1],  # last time
@@ -142,7 +202,7 @@ def densidade_n_t():
         label="MOC com M={0}, t={1:.0f} s".format(n, time[-1]),
     )
 
-    n = pbe_solutions["grid"][-1]
+    n = grids[-1]
     ax.semilogx(
         pbe_solutions[n].xi,  # volume pivot
         pbe_solutions[n].number_density[t2],
@@ -192,7 +252,7 @@ def densidade_n_t():
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
     fig.savefig(
-        path.join(dir, "number_density_t10&t1000_ziff1985.pdf"),
+        path.join(dir, "number_density_teste_malha.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -203,5 +263,5 @@ def densidade_n_t():
 # call plots
 fig = total_numbers()
 fig = densidade_n()
-fig = densidade_n_t()
+fig = densidade_n_t(t=100)
 plt.show()

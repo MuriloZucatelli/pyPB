@@ -56,6 +56,8 @@ class MOCSolution:
         self.M = M
         self.t = t
         if dxi is not None:
+            self.dxi = dxi
+        if dxi is not None and xi is None:
             if xi0 is None and isinstance(self.dxi, float):
                 self.xi0 = self.dxi  # define o ξ0, volume minimo
             else:
@@ -73,7 +75,7 @@ class MOCSolution:
         self.theta = theta  # mean residence time
 
         # Non-uniform grid
-        if xi is not None:
+        if xi is not None and dxi is None:
             v = zeros(self.M + 1)  # Classes de volume v = (x_i-1 + x_i)/2
             dxi = zeros(self.M)
             for i in range(self.M):
@@ -91,7 +93,7 @@ class MOCSolution:
             self.xi = xi
             self.v = v
         else:
-            pass
+            self.xi = xi
 
         # integration of initial number density function to obtain
         # number concentration N0
@@ -256,6 +258,8 @@ class MOCSolution:
         Returns:
             float: number density
         """
+        print(self.xi)
+        print(self.dxi)
         return self.N / self.dxi  # N/dV
 
     @property

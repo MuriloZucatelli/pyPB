@@ -50,6 +50,8 @@ def n0_init(v):
     return (N0 / v0) * (v / v0) * exp(-v / v0)
 
 
+# TODO: dxi esta definido errado no inicio e no fim, o valor de metade do intervalo não está dando certo aqui
+#       mas deu certo no caso de pura quebra, averiguar...
 for g in grids:
     if malha == 1:
         xi = v0 * r ** arange(g)
@@ -59,7 +61,7 @@ for g in grids:
         N = zeros(g)
         N[0] = 2
 
-    #pbe_solutions[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+    # pbe_solutions[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
     pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
 
 totals = dict((n, pbe_solutions[n].total_numbers) for n in pbe_solutions)
@@ -256,8 +258,8 @@ def densi_n_t():
     return fig
 
 
-#plot_n0_init()
-fig = total_numbers()
-#fig = densi_n()
-#fig = densi_n_t()
+# plot_n0_init()
+# fig = total_numbers()
+fig = densi_n()
+# fig = densi_n_t()
 plt.show()

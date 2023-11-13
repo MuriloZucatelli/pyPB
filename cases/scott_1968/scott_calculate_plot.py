@@ -27,7 +27,7 @@ Case setup based on:
 """
 
 grids = [20, 40, 80, 160]  # number os classes
-grids = [10]
+grids = [50]
 time = arange(0.0, 100, 0.001)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
@@ -245,6 +245,6 @@ def densi_n_t():
 
 #plot_n0_init()
 fig = total_numbers()
-#fig = densi_n()
+fig = densi_n()
 #fig = densi_n_t()
 plt.show()
