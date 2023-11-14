@@ -1,15 +1,14 @@
-from numpy import arange, linspace, array, piecewise, where
+from numpy import arange, linspace, array, piecewise, where, isclose, zeros, diff
 from itertools import cycle
 import sys
 import os.path as path
-import pickle
 from matplotlib import ticker
 import matplotlib.pyplot as plt
+
 dir = path.dirname(__file__)
 if __name__ == "__main__":
     sys.path.append(path.abspath(path.join(dir, "..\\..")))
 from pbe.solvers.moc import MOCSolution
-import os
 from pbe.setup.helpers import plt_config2
 from tests.test_moc import ziff_total_number_solution, ziff_pbe_solution
 
@@ -28,16 +27,17 @@ Case setup based on:
 """
 
 grids = [10, 40, 160]  # Número de classes utilizadas na discretização
-grids = [100]
+grids = [5]
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 # N0 = 1
-vmax = 1.0  # Volume máximo
-v0 = 1.0
+vmax = 10.0  # Volume máximo
+v0 = 10.0
 pbe_solutions = dict()
 
 for g in grids:
     threshold = vmax / g / 2
-
+    N0 = zeros(g)
+    N0[-1] = 1
     # This is modelling Dirac's delta
     # initial number density function
     def n0_init(x):
@@ -54,12 +54,11 @@ for g in grids:
         g,  # number of classes
         time,
         vmax / g,  # dxi
-        n0=n0_init2,
+        #n0=n0_init2,
+        N0=N0,
         beta=lambda x, y: 1.0 / y,  # DDSD   era 2.0 / y
         gamma=lambda x: x**2,  # breakage rate
     )
-
-
 
 
 # set_plt_params()
@@ -99,7 +98,7 @@ def total_numbers():
     ax.grid()
     y_formatter = ticker.ScalarFormatter(useOffset=False)
     y_formatter.set_scientific(False)
-    #ax.yaxis.set_major_formatter(y_formatter)
+    # ax.yaxis.set_major_formatter(y_formatter)
     fig.savefig(
         path.join(dir, "total_number_of_droplets_ziff1985.pdf"),
         backend="pgf",
@@ -139,7 +138,7 @@ def densidade_n():
 
     ax.text(
         0.18,
-        0.85,
+        0.81,
         r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][-1] / totals[n][0]),
         fontsize=11,
         horizontalalignment="center",
@@ -164,9 +163,12 @@ def densidade_n():
     Densidade numerica para tempos diferentes
 """
 
+
 def densidade_n_t():
     plt_config2(relative_fig_width=0.7)
-    t2 = where(time == 300)[0].squeeze()
+    time2 = 0.3 * time[-1]
+    tol = 0.5 * diff(time).mean()
+    loct2 = where(isclose(time, time2, atol=tol))[-1].squeeze()
     fig = plt.figure()
     ax = fig.gca()
     markers = cycle(["o", "s", "v", "*", ".", ","])
@@ -183,9 +185,9 @@ def densidade_n_t():
     n = grids[-1]
     ax.semilogx(
         pbe_solutions[n].xi,  # volume pivot
-        pbe_solutions[n].number_density[t2],
+        pbe_solutions[n].number_density[loct2],
         marker=next(markers),
-        label="MOC com M={0}, t={1:.0f} s".format(n, time[t2]),
+        label="MOC com M={0}, t={1:.0f} s".format(n, time[loct2]),
     )
 
     ax.semilogx(
@@ -198,15 +200,15 @@ def densidade_n_t():
 
     ax.semilogx(
         v,
-        ziff_pbe_solution(v, time[t2], v0),  # analytical in last time
+        ziff_pbe_solution(v, time[loct2], v0),  # analytical in last time
         ":k",
         linewidth=1.0,
-        label="Analítico t={:.0f} s".format(time[t2]),
+        label="Analítico t={:.0f} s".format(time[loct2]),
     )
 
     ax.text(
         0.18,
-        0.85,
+        0.81,
         r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][-1] / totals[n][0]),
         fontsize=11,
         horizontalalignment="center",
@@ -217,7 +219,7 @@ def densidade_n_t():
     ax.text(
         0.16,
         0.21,
-        r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][t2] / totals[n][0]),
+        r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][loct2] / totals[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",

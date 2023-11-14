@@ -17,7 +17,7 @@ class MOCSolution:
 
     def __init__(
         self,
-        Nclasses,
+        M,
         t,
         dxi,
         xi=None,
@@ -52,7 +52,7 @@ class MOCSolution:
             nf0 (_type_, optional): number feed rate of drops, sec-1. Defaults to None.
             A0 (_type_, optional): probability density of droplet size in the feed . Defaults to None.
         """
-        self.Nclasses = Nclasses
+        self.M = M
         self.t = t
         self.dxi = dxi
         if xi0 is None and isinstance(self.dxi, float):
@@ -68,7 +68,7 @@ class MOCSolution:
         # Uniform grid
         if isinstance(self.dxi, float):
             self.xi = self.xi0 + self.dxi * arange(
-                self.Nclasses
+                self.M
             )  # vetor com as classes vk ξ, dxi é o parametro k
 
         # Non-uniform grid
@@ -88,7 +88,7 @@ class MOCSolution:
             N0 = array(
                 [
                     quad(n0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
-                    for i in range(Nclasses)
+                    for i in range(M)
                 ]
             )  # initial number concentration
         print(sum(N0))
@@ -100,7 +100,7 @@ class MOCSolution:
         # Kernels setup avaliando a função beta e gama para cada classe
         if gamma is not None and beta is not None:
             self.gamma = gamma(self.xi)
-            self.betadxi = zeros((self.Nclasses, self.Nclasses))  # β(ξ,ξ′j)
+            self.betadxi = zeros((self.M, self.M))  # β(ξ,ξ′j)
             for i in range(1, xi_len):
                 for j in range(i):
                     self.betadxi[j, i] = beta(self.xi[j], self.xi[i])
@@ -133,7 +133,7 @@ class MOCSolution:
             self.A0 = array(
                 [
                     quad(A0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
-                    for i in range(Nclasses)
+                    for i in range(M)
                 ]
             )
         # Solve procedure
@@ -150,13 +150,13 @@ class MOCSolution:
 
         if self.Q is not None:
             Cd = zeros_like(dNdt)
-            for i in arange(self.Nclasses // 2):
-                ind = slice(i, self.Nclasses - i - 1)
+            for i in arange(self.M // 2):
+                ind = slice(i, self.M - i - 1)
                 Cb = self.Q[i, ind] * N[i] * N[ind]
                 # Death coalescence term
                 Cd[i] += nsum(Cb)
                 # Birth coalescence term
-                Cd[(i + 1) : (self.Nclasses - i - 1)] += Cb[1:]
+                Cd[(i + 1) : (self.M - i - 1)] += Cb[1:]
                 Cb[0] = 0.5 * Cb[0]
                 dNdt[(2 * i + 1) :] += Cb
 

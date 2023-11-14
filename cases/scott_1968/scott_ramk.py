@@ -1,4 +1,4 @@
-from numpy import arange, linspace, exp, piecewise, where, zeros, diff
+from numpy import arange, linspace, exp, geomspace, piecewise, where, zeros, diff
 from itertools import cycle
 import sys
 import os.path as path
@@ -29,22 +29,22 @@ Case setup based on:
 
 v0 = 7.87011e-05 / 1e9
 r = 1.445124894
-r = 1.5
+r = 1.2
 
 grids = [10, 50, 100, 150, 300]  # number os classes
-grids = [50]
+grids = [100]
 time = arange(0.0, 100, 0.001)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
 N0 = 2  # initial Number of droplets
 v0 = 0.5  # initial volume
-
-pbe_solutions = dict()
-malha = 2
-
+malha = 3
+sol = dict()
 
 # Distribuição inicial Gaussiana
 # Number density function
+
+
 def n0_init(v):
     # return (N0 / v0) * v/v
     return (N0 / v0) * (v / v0) * exp(-v / v0)
@@ -58,14 +58,13 @@ for g in grids:
     elif malha == 2:
         xi = linspace(v0, vmax, g, endpoint=True)
         xi = (vmax / g) + (vmax / g) * arange(g)
-        N = zeros(g)
-        N[0] = 2
+    elif malha == 3:
+        xi = geomspace(1e-2*v0, vmax, g, endpoint=True)
+    sol[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+    # pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
 
-    # pbe_solutions[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
-    pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
-
-totals = dict((n, pbe_solutions[n].total_numbers) for n in pbe_solutions)
-volume = dict((n, pbe_solutions[n].total_volume) for n in pbe_solutions)
+totals = dict((n, sol[n].total_numbers) for n in sol)
+volume = dict((n, sol[n].total_volume) for n in sol)
 
 v = linspace(0, vmax, 200)
 Na = scott_total_number_solution3(time, C=C, N0=N0)
@@ -135,10 +134,10 @@ def densi_n():
     ax = fig.gca()
     markers = cycle(["o", "s", "v", "*", ".", ","])
 
-    for n in sorted(pbe_solutions):
+    for n in sorted(sol):
         ax.loglog(
-            pbe_solutions[n].xi,
-            pbe_solutions[n].number_density[-1],
+            sol[n].xi,
+            sol[n].number_density[-1],
             ls="",
             marker=next(markers),
             label="MOC com M={0}".format(n),
@@ -190,15 +189,15 @@ def densi_n_t():
 
     n = grids[-1]
     ax.loglog(
-        pbe_solutions[n].xi,
-        pbe_solutions[n].number_density[-1],
+        sol[n].xi,
+        sol[n].number_density[-1],
         ls="",
         marker=next(markers),
         label="MOC com M={0}, t={1:.0f} s".format(n, time[-1]),
     )
     ax.loglog(
-        pbe_solutions[n].xi,
-        pbe_solutions[n].number_density[t2],
+        sol[n].xi,
+        sol[n].number_density[t2],
         ls="",
         marker=next(markers),
         label="MOC com M={0}, t={1:.0f} s".format(n, time[t2]),
@@ -259,7 +258,7 @@ def densi_n_t():
 
 
 # plot_n0_init()
-# fig = total_numbers()
+fig = total_numbers()
 fig = densi_n()
 # fig = densi_n_t()
 plt.show()

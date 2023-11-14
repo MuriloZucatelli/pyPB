@@ -1,4 +1,15 @@
-from numpy import arange, linspace, array, piecewise, zeros, ones, diff, insert, where
+from numpy import (
+    arange,
+    linspace,
+    array,
+    zeros,
+    isclose,
+    diff,
+    insert,
+    where,
+    piecewise,
+    geomspace
+)
 from itertools import cycle
 import sys
 import os.path as path
@@ -27,57 +38,64 @@ Case setup based on:
     Teste com mesma malha utilizada pelo bettersize
 """
 
-grids = [74]  # Número de classes utilizadas na discretização
+grids = [10]  # Número de classes utilizadas na discretização
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 v0 = 7.87011e-05 / 1e9
 dv0 = 2.65025e-05
 r = 1.445124894
 
-# v0 = 1.0
-# r = 1
-caso = 3
-vmax = 1.0
+#v0 = 0.05
+v0 = 10
+r = 1.2
+malha = 3
+#vmax = 0.1
+vmax = 10
 
 # Caso 4 funcionou bem
 # v0 = 0.0001
 # dv0 = v0
 
-pbe_solutions = dict()
+sol = dict()
 
 for g in grids:
     # This is modelling Dirac's delta
     # initial number density function
+
+    threshold = vmax / g / 2
     N0 = zeros(g)
     N0[-1] = 1
 
-    if caso == 1:
+    def n0_init2(x):
+        return piecewise(
+            x, [abs(v0 - x) < threshold, v0 - x >= threshold], [g / vmax, 0]
+        )  # 0 ou g/vmax   função delta de dirac generica
+
+    if malha == 1:
         xi = v0 * r ** arange(g)
         dxi = dv0 * r ** arange(g)
-    elif caso == 2:
-        dxi = dv0 * 1.1 ** arange(g)
-        dxi = diff(xi)
-        dxi1 = insert(dxi, 0, dxi[0])
-        dxi2 = insert(dxi, -1, dxi[-1])
-        dxi = (dxi1 + dxi2) / 2
-        dxi[0] = dxi[0] / 2
 
-    elif caso == 3:
+    elif malha == 2:
+        xi = linspace(1e-5, vmax, g, endpoint=True)
+
+    elif malha == 3:
         xi = v0 + v0 * arange(g)
-        xi = linspace(v0, vmax, g, endpoint=True)
+        xi = geomspace(1e-5, vmax, g, endpoint=True)
 
-    elif caso == 4:
+    elif malha == 4:
         xi = v0 * r ** arange(g)
 
-    pbe_solutions[g] = MOCSolution(
+    elif malha == 5:
+        xi = (vmax / g) + (vmax / g) * arange(g)
+
+    sol[g] = MOCSolution(
         g,  # number of classes
         time,
         xi=xi,
+        #n0=n0_init2,
         N0=N0,
         beta=lambda x, y: 1.0 / y,  # DDSD
         gamma=lambda x: x**2,  # breakage rate
     )
-
-from itertools import cycle
 
 
 # set_plt_params()
@@ -87,9 +105,9 @@ from itertools import cycle
 
 
 vmax = xi[-1]  # Max volume
-v0 = xi[-1]  # Initial volume
-totals = dict((n, pbe_solutions[n].total_numbers) for n in grids)
-volume = dict((n, pbe_solutions[n].total_volume) for n in grids)
+#v0 = xi[-1]  # Initial volume
+totals = dict((n, sol[n].total_numbers) for n in grids)
+volume = dict((n, sol[n].total_volume) for n in grids)
 
 
 def total_numbers():
@@ -144,8 +162,8 @@ def densidade_n():
 
     for n in sorted(grids):
         ax.semilogx(
-            pbe_solutions[n].xi,  # volume pivot
-            pbe_solutions[n].number_density[-1],  # last time
+            sol[n].xi,  # volume pivot
+            sol[n].number_density[-1],  # last time
             marker=next(markers),
             label="MOC com M={0}".format(n),
         )
@@ -186,9 +204,11 @@ def densidade_n():
 """
 
 
-def densidade_n_t(t=100):
+def densidade_n_t():
     plt_config2(relative_fig_width=0.7)
-    t2 = where(time == t)[0].squeeze()
+    time2 = 0.3 * time[-1]
+    tol = 0.5 * diff(time).mean()
+    loct2 = where(isclose(time, time2, atol=tol))[-1].squeeze()
     fig = plt.figure()
     ax = fig.gca()
     markers = cycle(["o", "s", "v", "*", ".", ","])
@@ -196,18 +216,18 @@ def densidade_n_t(t=100):
 
     n = grids[-1]
     ax.semilogx(
-        pbe_solutions[n].xi,  # volume pivot
-        pbe_solutions[n].number_density[-1],  # last time
+        sol[n].xi,  # volume pivot
+        sol[n].number_density[-1],  # last time
         marker=next(markers),
         label="MOC com M={0}, t={1:.0f} s".format(n, time[-1]),
     )
 
     n = grids[-1]
     ax.semilogx(
-        pbe_solutions[n].xi,  # volume pivot
-        pbe_solutions[n].number_density[t2],
+        sol[n].xi,  # volume pivot
+        sol[n].number_density[loct2],
         marker=next(markers),
-        label="MOC com M={0}, t={1:.0f} s".format(n, time[t2]),
+        label="MOC com M={0}, t={1:.0f} s".format(n, time[loct2]),
     )
 
     ax.semilogx(
@@ -220,10 +240,10 @@ def densidade_n_t(t=100):
 
     ax.semilogx(
         v,
-        ziff_pbe_solution(v, time[t2], v0),  # analytical in last time
+        ziff_pbe_solution(v, time[loct2], v0),  # analytical in last time
         ":k",
         linewidth=1.0,
-        label="Analítico t={:.0f} s".format(time[t2]),
+        label="Analítico t={:.0f} s".format(time[loct2]),
     )
 
     ax.text(
@@ -239,7 +259,7 @@ def densidade_n_t(t=100):
     ax.text(
         0.16,
         0.21,
-        r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][t2] / totals[n][0]),
+        r"N/N0 $\approx$ " + "{:.0f}".format(totals[n][loct2] / totals[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
@@ -263,5 +283,5 @@ def densidade_n_t(t=100):
 # call plots
 fig = total_numbers()
 fig = densidade_n()
-fig = densidade_n_t(t=100)
+fig = densidade_n_t()
 plt.show()

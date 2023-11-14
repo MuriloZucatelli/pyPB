@@ -1,4 +1,4 @@
-from numpy import arange, zeros, pi, zeros_like, dot, array, where, delete, eye
+from numpy import arange, zeros, pi, zeros_like, dot, array, where, delete, eye, ones
 from numpy import sum as nsum
 from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
@@ -75,26 +75,54 @@ class MOCSolution:
         self.theta = theta  # mean residence time
 
         # Non-uniform grid
-        if xi is not None and dxi is None:
-            v = zeros(self.M + 1)  # Classes de volume v = (x_i-1 + x_i)/2
-            dxi = zeros(self.M)
-            for i in range(self.M):
-                if i == 0:
-                    dxi[i] = (xi[0] + xi[1]) / 2 - xi[0]
-                    v[0] = max(0, xi[0] - dxi[0])
-                    v[1] = (xi[0] + xi[1]) / 2
-                elif i == self.M - 1:
-                    dxi[i] = xi[-1] - (xi[-1] + xi[-2]) / 2
-                    v[i + 1] = xi[i] + dxi[i]
-                else:
-                    dxi[i] = (xi[i + 1] + xi[i]) / 2 - (xi[i] + xi[i - 1]) / 2
-                    v[i + 1] = (xi[i] + xi[i + 1]) / 2
-            self.dxi = dxi
-            self.xi = xi
-            self.v = v
-        else:
-            self.xi = xi
+        # a = 2 mantem os extremos com dx na mesma medida que os
+        # pontos intermediarios, funciona bem pra coalescencia
+        # mas pra quebra necessita de um ajuste em dNdT[0]
+        # Não encontrado nenhum bug nem o motivo disso acontecer
+        # Esse impacto é visto apenas na quebra, mas não foi encontrado
+        # nenhum bug ou cálculo errado na implementação
+        a = 2
+        if a == 1:
+            if xi is not None and dxi is None:
+                v = zeros(self.M + 1)  # Classes de volume v = (x_i-1 + x_i)/2
+                dxi = zeros(self.M)
+                for i in range(self.M):
+                    if i == 0:
+                        dxi[i] = (xi[0] + xi[1]) / 2 - xi[0]
+                        v[0] = max(0, xi[0] - dxi[0])
+                        v[1] = (xi[0] + xi[1]) / 2
+                    elif i == self.M - 1:
+                        dxi[i] = xi[-1] - (xi[-1] + xi[-2]) / 2
+                        v[i + 1] = xi[i] + dxi[i]
+                    else:
+                        dxi[i] = (xi[i + 1] + xi[i]) / 2 - (xi[i] + xi[i - 1]) / 2
+                        v[i + 1] = (xi[i] + xi[i + 1]) / 2
+                self.dxi = dxi
+                self.xi = xi
+                self.v = v
+            else:
+                self.xi = xi
 
+        if a == 2:
+            if xi is not None and dxi is None:
+                v = zeros(self.M + 1)  # Classes de volume v = (x_i-1 + x_i)/2
+                dxi = zeros(self.M)
+                for i in range(self.M):
+                    if i == 0:
+                        dxi[i] = 2 * ((xi[0] + xi[1]) / 2 - xi[0])
+                        v[0] = max(0, xi[0] - dxi[0])
+                        v[1] = (xi[0] + xi[1]) / 2
+                    elif i == self.M - 1:
+                        dxi[i] = 2 * (xi[-1] - (xi[-1] + xi[-2]) / 2)
+                        v[i + 1] = xi[i] + dxi[i]
+                    else:
+                        dxi[i] = (xi[i + 1] + xi[i]) / 2 - (xi[i] + xi[i - 1]) / 2
+                        v[i + 1] = (xi[i] + xi[i + 1]) / 2
+                self.dxi = dxi
+                self.xi = xi
+                self.v = v
+            else:
+                self.xi = xi
         # integration of initial number density function to obtain
         # number concentration N0
         # Number of droplets per m³ of discrete phase (number concentration)
@@ -118,7 +146,7 @@ class MOCSolution:
         # plt.plot(self.xi, N0, label=str(self.M))
         # plt.legend()
         if nu is None:
-            self.nu = 2.0  # Binary breakup
+            self.nu = 2.0 * ones(self.M)  # Binary breakup for all droplets
 
         def nik1(v, xi, i, k):
             return (xi[i + 1] - v) / (xi[i + 1] - xi[i]) * beta(v, xi[k])
@@ -126,21 +154,19 @@ class MOCSolution:
         def nik2(v, xi, i, k):
             return (v - xi[i - 1]) / (xi[i] - xi[i - 1]) * beta(v, xi[k])
 
-        # Kernels setup avaliando a função beta e gama para cada classe
+        # Kernels setup avaliando a função beta e gamma para cada classe
         if gamma is not None and beta is not None:
             self.gamma = gamma(self.xi)
-            self.beta = zeros((self.M, self.M))  # β(ξ,ξ′j)
-            self.nik = zeros((self.M, self.M))  # β(ξ,ξ′j)
+            self.beta = zeros((self.M, self.M))  # β(v,v′)
+            self.nik = zeros((self.M, self.M))  # β(v,v′)
             for i in range(0, self.M):
                 for k in range(i, self.M):
                     if i != k:
-                        self.nik[i, k] += quad(
-                            lambda v: nik1(v, self.xi, i, k), self.xi[i], self.xi[i + 1]
-                        )[0]
+                        nik = lambda v: nik1(v, self.xi, i, k)
+                        self.nik[i, k] += quad(nik, self.xi[i], self.xi[i + 1])[0]
                     if i != 0:
-                        self.nik[i, k] += quad(
-                            lambda v: nik2(v, self.xi, i, k), self.xi[i - 1], self.xi[i]
-                        )[0]
+                        nik = lambda v: nik2(v, self.xi, i, k)
+                        self.nik[i, k] += quad(nik, self.xi[i - 1], self.xi[i])[0]
 
         else:
             self.gamma = None
@@ -227,7 +253,8 @@ class MOCSolution:
             # Death breakup term
             dNdt -= N * self.gamma
             # Birth breakup term
-            dNdt += self.nu * dot(self.nik, N * self.gamma)
+            dNdt += dot(self.nu * self.nik, N * self.gamma)
+            dNdt[0] *= 2 # Bizarro isso funcionou
 
         if self.Q is not None:
             dNdt -= N * dot(self.Q, N)
@@ -258,8 +285,6 @@ class MOCSolution:
         Returns:
             float: number density
         """
-        print(self.xi)
-        print(self.dxi)
         return self.N / self.dxi  # N/dV
 
     @property
