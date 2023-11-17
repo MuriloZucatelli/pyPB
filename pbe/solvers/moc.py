@@ -91,6 +91,12 @@ class MOCSolution:
                     for i in range(M)
                 ]
             )  # initial number concentration
+        elif callable(N0):
+            N0 = array(
+                [
+                    N0(self.xi[i]) for i in range(M)
+                ]
+            )  # initial number concentration
         print(sum(N0))
         #plt.plot(self.xi, N0, label=str(Nclasses))
         #plt.legend()

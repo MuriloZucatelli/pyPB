@@ -38,18 +38,18 @@ Case setup based on:
     Teste com mesma malha utilizada pelo bettersize
 """
 
-grids = [10]  # Número de classes utilizadas na discretização
+grids = [100]  # Número de classes utilizadas na discretização
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 v0 = 7.87011e-05 / 1e9
 dv0 = 2.65025e-05
 r = 1.445124894
 
 #v0 = 0.05
-v0 = 10
-r = 1.2
+#v0 = 10.0
+#r = 1.2
 malha = 3
 #vmax = 0.1
-vmax = 10
+vmax = 1.0
 
 # Caso 4 funcionou bem
 # v0 = 0.0001
@@ -61,7 +61,7 @@ for g in grids:
     # This is modelling Dirac's delta
     # initial number density function
 
-    threshold = vmax / g / 2
+    #threshold = vmax / g / 2
     N0 = zeros(g)
     N0[-1] = 1
 
@@ -79,7 +79,7 @@ for g in grids:
 
     elif malha == 3:
         xi = v0 + v0 * arange(g)
-        xi = geomspace(1e-5, vmax, g, endpoint=True)
+        xi = geomspace(1e-3, vmax, g, endpoint=True)
 
     elif malha == 4:
         xi = v0 * r ** arange(g)
@@ -105,7 +105,7 @@ for g in grids:
 
 
 vmax = xi[-1]  # Max volume
-#v0 = xi[-1]  # Initial volume
+v0 = xi[-1]  # Initial volume
 totals = dict((n, sol[n].total_numbers) for n in grids)
 volume = dict((n, sol[n].total_volume) for n in grids)
 

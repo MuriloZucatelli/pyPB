@@ -1,4 +1,17 @@
-from numpy import arange, zeros, pi, zeros_like, dot, array, where, delete, eye, ones
+from numpy import (
+    arange,
+    zeros,
+    pi,
+    zeros_like,
+    dot,
+    array,
+    where,
+    delete,
+    eye,
+    ones,
+    diff,
+    fill_diagonal,
+)
 from numpy import sum as nsum
 from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
@@ -32,7 +45,7 @@ class MOCSolution:
         nf0=None,
         A0=None,
     ):
-        """Solution by method of classes based on Coulaloglou & Tavlarides 1977
+        """
 
         Args:
             M (_type_): number of classes
@@ -51,10 +64,11 @@ class MOCSolution:
             theta (_type_, optional): mean residence time. Defaults to None.
             nu(_type, optional): number of droplets formed of a break of a droplet
             nf0 (_type_, optional): number feed rate of drops, sec-1. Defaults to None.
-            A0 (_type_, optional): probability density of droplet size in the feed . Defaults to None.
+            A0 (_type_, optional): probability density of droplet size in the feeds. Defaults to None.
         """
         self.M = M
         self.t = t
+
         if dxi is not None:
             self.dxi = dxi
         if dxi is not None and xi is None:
@@ -121,7 +135,7 @@ class MOCSolution:
                 self.dxi = dxi
                 self.xi = xi
                 self.v = v
-            else:
+            elif xi is not None and dxi is not None:
                 self.xi = xi
         # integration of initial number density function to obtain
         # number concentration N0
@@ -143,21 +157,25 @@ class MOCSolution:
                 [quad(n0, v[i], v[i + 1])[0] for i in range(self.M)]
             )  # initial number concentration
 
+        elif callable(N0):
+            N0 = array(
+                [N0(self.xi[i]) for i in range(M)]
+            )  # initial number concentration
+
         # plt.plot(self.xi, N0, label=str(self.M))
         # plt.legend()
         if nu is None:
             self.nu = 2.0 * ones(self.M)  # Binary breakup for all droplets
 
         def nik1(v, xi, i, k):
-            return (xi[i + 1] - v) / (xi[i + 1] - xi[i]) * beta(v, xi[k])
+            return ((xi[i + 1] - v) / (xi[i + 1] - xi[i])) * beta(v, xi[k])
 
         def nik2(v, xi, i, k):
-            return (v - xi[i - 1]) / (xi[i] - xi[i - 1]) * beta(v, xi[k])
+            return ((v - xi[i - 1]) / (xi[i] - xi[i - 1])) * beta(v, xi[k])
 
         # Kernels setup avaliando a função beta e gamma para cada classe
         if gamma is not None and beta is not None:
             self.gamma = gamma(self.xi)
-            self.beta = zeros((self.M, self.M))  # β(v,v′)
             self.nik = zeros((self.M, self.M))  # β(v,v′)
             for i in range(0, self.M):
                 for k in range(i, self.M):
@@ -168,25 +186,41 @@ class MOCSolution:
                         nik = lambda v: nik2(v, self.xi, i, k)
                         self.nik[i, k] += quad(nik, self.xi[i - 1], self.xi[i])[0]
 
+            self.nik[0, :] *= 2
+            mesh = "geometric"
+            if diff(self.xi).std() < 0.5 * diff(self.xi).mean():
+                mesh = "uniform"
+                # NOTE: Necessário para bater com o resultado analítico do
+                # Blatz e Tobolsky. Mas faz errar o resultado de Ziff
+                # Isso deve ser feito para quando a malha for uniforme
+                # Porem quando a malha é geométrica, isso produz um erro
+                fill_diagonal(self.nik, 0)
+                for i in range(self.M):
+                    if nsum(self.nik[:, i]) > 0:
+                        self.nik[:, i] = self.nik[:, i] / nsum(self.nik[:, i])
+
+            elif mesh == "geometric":
+                pass
+            print(mesh)
         else:
             self.gamma = None
             self.nik = None
         # Q: coalescence rate
         if Q is not None:
             self.D = 1 - 0.5 * eye(self.M)
-            Xjk = array([xi + xi[i] for i in range(self.M)])
+            Xjk = array([self.xi + self.xi[i] for i in range(self.M)])
             cond = dict()
             self.condjbk = dict()
             for i in range(self.M):
                 if i == 0:
-                    condicao_sup = Xjk <= xi[i + 1]
+                    condicao_sup = Xjk <= self.xi[i + 1]
                     cond[i] = array(where(condicao_sup))
                 elif i == self.M - 1:
-                    condicao_inf = Xjk >= xi[i - 1]
+                    condicao_inf = Xjk >= self.xi[i - 1]
                     cond[i] = array(where(condicao_inf))
                 else:
-                    condicao_inf = Xjk >= xi[i - 1]
-                    condicao_sup = Xjk <= xi[i + 1]
+                    condicao_inf = Xjk >= self.xi[i - 1]
+                    condicao_sup = Xjk <= self.xi[i + 1]
                     cond[i] = array(where(condicao_inf & condicao_sup))
 
             # Eliminando os pares onde j é menor do que k
@@ -239,7 +273,9 @@ class MOCSolution:
         else:
             self.A0 = array(
                 [
-                    quad(A0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
+                    quad(A0, self.xi[i] - self.dxi / 2.0, self.xi[i] + self.dxi / 2.0)[
+                        0
+                    ]
                     for i in range(self.M)
                 ]
             )
@@ -254,7 +290,6 @@ class MOCSolution:
             dNdt -= N * self.gamma
             # Birth breakup term
             dNdt += dot(self.nu * self.nik, N * self.gamma)
-            dNdt[0] *= 2 # Bizarro isso funcionou
 
         if self.Q is not None:
             dNdt -= N * dot(self.Q, N)

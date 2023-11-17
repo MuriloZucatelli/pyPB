@@ -32,13 +32,13 @@ r = 1.445124894
 r = 1.2
 
 grids = [10, 50, 100, 150, 300]  # number os classes
-grids = [100]
-time = arange(0.0, 100, 0.001)
+grids = [6]
+time = arange(0.0, 100, 0.01)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
 N0 = 2  # initial Number of droplets
 v0 = 0.5  # initial volume
-malha = 3
+malha = 2
 sol = dict()
 
 # Distribuição inicial Gaussiana
@@ -59,7 +59,7 @@ for g in grids:
         xi = linspace(v0, vmax, g, endpoint=True)
         xi = (vmax / g) + (vmax / g) * arange(g)
     elif malha == 3:
-        xi = geomspace(1e-2*v0, vmax, g, endpoint=True)
+        xi = geomspace(1e-4*v0, vmax, g, endpoint=True)
     sol[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
     # pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
 

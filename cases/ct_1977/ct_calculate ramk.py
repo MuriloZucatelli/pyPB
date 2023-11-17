@@ -1,25 +1,28 @@
-from numpy import genfromtxt, linspace
-import pickle
-import os
 import sys
 import os.path as path
-
+from numpy import genfromtxt, linspace, array
+import os
+import itertools
 dir = path.dirname(__file__)
 if __name__ == "__main__":
     sys.path.append(path.abspath(path.join(dir, "..\\..")))
+from pbe.app.ct_class_ramk import CTSolution
 from pbe.setup.helpers import set_plt_params
 from matplotlib.pyplot import figure
-import itertools
 
 """
-This script plot figure 3 from CT publication.
+This script calculated solutions to PBE problem that are necessary to reproduce
+figure 3 from CT publication.
 """
-dir = os.path.dirname(__file__)
-with open(os.path.join(dir, 'ct_solutions.pickle'), 'rb') as f:
-    ct_solutions = pickle.load(f)
 
 concentrations = [10]  # , 10, 15]
 Ns = linspace(3, 6, 10)  # rps
+Ns = array([3])
+# Ns = [5.16]
+ct_solutions = dict([(
+    c, [CTSolution(M=10, Nstar=N, phi=c / 100.0) for N in Ns])
+    for c in concentrations])
+
 
 ct_data = dict([(
     c, genfromtxt(
@@ -54,4 +57,4 @@ first_legend = ax.legend(handles[1:], labels[1:], loc='upper right')
 ax.add_artist(first_legend)
 second_legend = ax.legend(handles[:1], labels[:1], loc='lower left')
 fig.patch.set_alpha(0)
-fig.savefig(os.path.join(dir, "ct-fig3.pdf"), bbox_inches='tight')
+fig.savefig(os.path.join(dir, "ct-d32_ramk.pdf"), bbox_inches='tight')

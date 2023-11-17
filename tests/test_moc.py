@@ -38,12 +38,14 @@ def compare_with_analytical_pbe(
     check_error_convergence(L2_pbe_errors)
 
 
-def ziff_total_number_solution(x, t, l):
+def ziff_total_number_solution(x, t, x0):
     """
     This is simply an integral of Ziff and McGrady
     """
-    return exp(-t * l**2) \
-        + trapz(2.0 * t * l * exp(-t * x**2), x=x)
+    resolution = 1000
+    x = linspace(0, x0, resolution)
+    return exp(-t * x0**2) \
+        + trapz(2.0 * t * x0 * exp(-t * x**2), x=x)
 
 
 def ziff_pbe_solution(x, t, l):
@@ -63,9 +65,9 @@ def ziff_pbe_solution(x, t, l):
 
 
 def blatz_and_tobolsky_pbe_solution(xi, t, kc, kb):
-    K = 1.0 + kb / kc
-    pinf = 1.0 / (K + sqrt(K**2 - 1))
-    return pinf**(xi - 1.0) * (1.0 - pinf)**2
+    K = 1.0 + kb / kc  # certo
+    pinf = 1.0 / (K + sqrt(K**2 - 1))  # certo
+    return (pinf**(xi - 1.0)) * (1.0 - pinf)**2
 
 
 def scott_total_number_solution1(t):
@@ -84,7 +86,7 @@ def scott_pbe_solution3(xi, t, C=1, N0=1, xi0=1):
         #/ (T**0.5 * (T + 2)**1.5)
     phi3 = sum([
         (x * 2)**(2 * (k + 1)) / gamma(2 * (k + 1)) * (T/(T+2))**k
-        for k in range(90)
+        for k in range(45)
         ]) * 4.0 * exp(- 2 * x) / (x * (T + 2)**2)
     return N0 / xi0 * phi3
 

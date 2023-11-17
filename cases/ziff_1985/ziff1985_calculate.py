@@ -27,11 +27,11 @@ Case setup based on:
 """
 
 grids = [10, 40, 160]  # Número de classes utilizadas na discretização
-grids = [5]
+grids = [15]
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 # N0 = 1
-vmax = 10.0  # Volume máximo
-v0 = 10.0
+vmax = 1.0  # Volume máximo
+v0 = 1.0
 pbe_solutions = dict()
 
 for g in grids:
