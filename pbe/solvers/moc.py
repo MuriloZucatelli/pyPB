@@ -1,4 +1,4 @@
-from numpy import arange, zeros, pi, zeros_like, dot, array
+from numpy import arange, zeros, pi, zeros_like, dot, array, diff
 from numpy import sum as nsum
 from scipy.integrate import odeint, quad
 import matplotlib.pyplot as plt
@@ -19,7 +19,7 @@ class MOCSolution:
         self,
         M,
         t,
-        dxi,
+        dxi=None,
         xi=None,
         n0=None,
         N0=None,
@@ -54,29 +54,27 @@ class MOCSolution:
         """
         self.M = M
         self.t = t
-        self.dxi = dxi
-        if xi0 is None and isinstance(self.dxi, float):
-            self.xi0 = self.dxi  # define o ξ0, volume minimo
+        if dxi is not None:
+            self.dxi = dxi
+        if dxi is not None and xi is None:
+            if xi0 is None and isinstance(self.dxi, float):
+                self.xi0 = self.dxi  # define o ξ0, volume minimo
+            else:
+                self.xi0 = xi0
         else:
-            self.xi0 = xi0
-
+            self.dxi = diff(xi).mean()
         self.nf0 = nf0
         # inflow and outflow replaced with relaxation to equilibrium
         # process with relaxation time equal to residence time theta
         self.theta = theta  # mean residence time
 
         # Uniform grid
-        if isinstance(self.dxi, float):
+        if isinstance(self.dxi, float) and xi is None:
             self.xi = self.xi0 + self.dxi * arange(
                 self.M
             )  # vetor com as classes vk ξ, dxi é o parametro k
-
-        # Non-uniform grid
-        elif xi is not None:
-            self.xi = xi
         else:
-            pass
-
+            self.xi = xi
         xi_len = len(self.xi)
 
         # integration of initial number density function to obtain
@@ -84,22 +82,22 @@ class MOCSolution:
         # Number of droplets per m³ of discrete phase (number concentration)
         if n0 is None and N0 is None:
             N0 = zeros_like(self.xi)
-        elif N0 is None and dxi is not None:
+        elif N0 is None or (dxi is not None or isinstance(self.dxi, float)) and n0 is not None:
             N0 = array(
                 [
-                    quad(n0, self.xi[i] - dxi / 2.0, self.xi[i] + dxi / 2.0)[0]
+                    quad(n0, self.xi[i] - self.dxi / 2.0, self.xi[i] + self.dxi / 2.0)[
+                        0
+                    ]
                     for i in range(M)
                 ]
             )  # initial number concentration
         elif callable(N0):
             N0 = array(
-                [
-                    N0(self.xi[i]) for i in range(M)
-                ]
+                [N0(self.xi[i]) for i in range(M)]
             )  # initial number concentration
         print(sum(N0))
-        #plt.plot(self.xi, N0, label=str(Nclasses))
-        #plt.legend()
+        # plt.plot(self.xi, N0, label=str(Nclasses))
+        # plt.legend()
         if nu is None:
             self.nu = 2.0  # Binary breakup
 

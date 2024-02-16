@@ -50,19 +50,33 @@ class breakupModels:
         self.dp = dp
         self.mp = mp
 
-        match name:
-            case "coulaloglou":
-                self.gamma = self.coulaloglou_gamma_damping
-            case "alopaeus":
-                pass
-            case "mitre":
-                self.gamma = self.mitre_gamma
-            case "mb":
-                self.gamma = self.mb_gamma
-            case "cristini":
-                self.gamma = self.cristini_gamma_1
-            case None:
-                self.gamma = None
+        if name == "coulaloglou":
+            self.gamma = self.coulaloglou_gamma_damping
+        elif name == "alopaeus":
+            self.gamma = None
+        elif name == "mitre":
+            self.gamma = self.mitre_gamma
+        elif name == "mb":
+            self.gamma = self.mb_gamma
+        elif name == "cristini":
+            self.gamma = self.cristini_gamma_1
+        elif name == None:
+            self.gamma = None
+
+
+        #match name:
+        #    case "coulaloglou":
+        #        self.gamma = self.coulaloglou_gamma_damping
+        #    case "alopaeus":
+        #       pass
+        #  case "mitre":
+        #       self.gamma = self.mitre_gamma
+        #   case "mb":
+        #       self.gamma = self.mb_gamma
+        #   case "cristini":
+        #        self.gamma = self.cristini_gamma_1
+        #    case None:
+        #        self.gamma = None
 
     def mitre_gamma(self, v: float) -> float:
         """
@@ -288,19 +302,33 @@ class DDSD:
         self.dp = dp
         self.mp = mp
 
-        match name:
-            case "coulaloglou":
-                self.beta = self.coulaloglou_beta
-            case "alopaeus":
-                self.beta = None
-            case "mitre":
-                self.beta = None
-            case "mb_gamma":
-                self.beta = None
-            case "cristini":
-                self.beta = None
-            case None:
-                self.beta = None
+        if name == "coulaloglou":
+            self.beta = self.coulaloglou_beta
+        elif name == "alopaeus":
+            self.beta = None
+        elif name == "mitre":
+            self.beta = None
+        elif name == "mb_gamma":
+            self.beta = None
+        elif name == "cristini":
+            self.beta = None
+        elif name == None:
+            self.beta = None
+        
+
+        #match name:
+        #    case "coulaloglou":
+        #        self.beta = self.coulaloglou_beta
+        #    case "alopaeus":
+        #        self.beta = None
+        #    case "mitre":
+        #        self.beta = None
+        #    case "mb_gamma":
+        #        self.beta = None
+        #    case "cristini":
+        #        self.beta = None
+        #    case None:
+        #        self.beta = None
 
     @staticmethod
     def coulaloglou_beta(v1: float, v2: float) -> float:

@@ -6,7 +6,8 @@ import os.path as path
 dir = path.dirname(__file__)
 if __name__ == "__main__":
     sys.path.append(path.abspath(path.join(dir, "..\\..")))
-from pbe.solvers.moc_ramk import MOCSolution
+from pbe.solvers.moc_ramk import MOCSolution as MOCramk
+from pbe.solvers.moc import MOCSolution as MOChidy
 from pbe.setup.helpers import plt_config2
 from tests.test_moc import scott_total_number_solution3
 from tests.test_moc import scott_pbe_solution3
@@ -31,15 +32,15 @@ v0 = 7.87011e-05 / 1e9
 r = 1.445124894
 r = 1.2
 
-grids = [10, 50, 100, 150, 300]  # number os classes
-grids = [60]
+grids = [10, 40]  # number os classes
 time = arange(0.0, 100, 0.01)
 vmax = 50  # max volume
 C = 0.1  # constante de coalescencia
 N0 = 2  # initial Number of droplets
 v0 = 0.5  # initial volume
 malha = 3
-sol = dict()
+sol_ramk = dict()
+sol_hidy = dict()
 
 # Distribuição inicial Gaussiana
 # Number density function
@@ -50,8 +51,8 @@ def n0_init(v):
     return (N0 / v0) * (v / v0) * exp(-v / v0)
 
 
-# TODO: dxi esta definido errado no inicio e no fim, o valor de metade do intervalo não está dando certo aqui
-#       mas deu certo no caso de pura quebra, averiguar...
+# TODO: dxi esta definido errado no inicio e no fim, o valor de metade do intervalo 
+#       não está dando certo aqui mas deu certo no caso de pura quebra, averiguar...
 for g in grids:
     if malha == 1:
         xi = v0 * r ** arange(g)
@@ -59,12 +60,16 @@ for g in grids:
         xi = linspace(v0, vmax, g, endpoint=True)
         xi = (vmax / g) + (vmax / g) * arange(g)
     elif malha == 3:
-        xi = geomspace(1e-4*v0, vmax, g, endpoint=True)
-    sol[g] = MOCSolution(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+        xi = geomspace(1e-4 * v0, vmax, g, endpoint=True)
+    sol_ramk[g] = MOCramk(g, time, xi=xi, n0=n0_init, Q=lambda x, y: C)
+
+    xi = linspace(v0, vmax, g, endpoint=True)
+    sol_hidy[g] = MOChidy(g, time, dxi=vmax / g, n0=n0_init, Q=lambda x, y: C)
     # pbe_solutions[g] = MOCSolution(g, time, xi=xi, N0=N, Q=lambda x, y: C)
 
-totals = dict((n, sol[n].total_numbers) for n in sol)
-volume = dict((n, sol[n].total_volume) for n in sol)
+totals_ramk = dict((n, sol_ramk[n].total_numbers) for n in sol_ramk)
+totals_hidy = dict((n, sol_hidy[n].total_numbers) for n in sol_ramk)
+volume = dict((n, sol_ramk[n].total_volume) for n in sol_ramk)
 
 v = linspace(0, vmax, 200)
 Na = scott_total_number_solution3(time, C=C, N0=N0)
@@ -92,13 +97,20 @@ def total_numbers():
     fig = plt.figure()
     ax = fig.gca()
     linestyles = cycle(["-", "--", ":"])
-    for n in sorted(totals):
+    for n in sorted(totals_ramk):
         ax.plot(
             time,
-            totals[n] / totals[n][0],
+            totals_ramk[n] / totals_ramk[n][0],
             linestyle=next(linestyles),
             markevery=0.05,
-            label="MOC com M={0}".format(n),
+            label="MOC Ramk. M={0}".format(n),
+        )
+        ax.plot(
+            time,
+            totals_hidy[n] / totals_hidy[n][0],
+            linestyle=next(linestyles),
+            markevery=0.05,
+            label="MOC Hidy M={0}".format(n),
         )
     ax.plot(time, Na / N0, "--k", linewidth=1.5, label="Analítico")
     ax.legend(loc="best", shadow=True)
@@ -116,7 +128,7 @@ def total_numbers():
     ax.grid()
     plt.show()
     fig.savefig(
-        path.join(dir, "N_N0_scott1968_teste.pdf"),
+        path.join(dir, "scott1968_N.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -134,32 +146,42 @@ def densi_n():
     ax = fig.gca()
     markers = cycle(["o", "s", "v", "*", ".", ","])
 
-    for n in sorted(sol):
+    for n in sorted(sol_ramk):
         ax.loglog(
-            sol[n].xi,
-            sol[n].number_density[-1],
+            sol_ramk[n].xi,
+            sol_ramk[n].number_density[-1],
             ls="",
             marker=next(markers),
-            label="MOC com M={0}".format(n),
+            label="MOC Ramk. M={0}".format(n),
         )
+
+    for n in sorted(sol_hidy):
+        ax.loglog(
+            sol_hidy[n].xi,
+            sol_hidy[n].number_density[-1],
+            ls="",
+            marker=next(markers),
+            label="MOC Hidy M={0}".format(n),
+        )
+
     ax.loglog(
         v,
         scott_pbe_solution3(v, time[-1], C=C, xi0=2.0 * v0, N0=N0),
         ":k",
         linewidth=1.5,
-        label="Analítico t={:.0f} s".format(time[-1]),
+        label="Analítico {:.0f} s".format(time[-1]),
     )
     ax.text(
         0.29,
         0.79,
-        r"N/N0 $\approx$ " + "{:.3f}".format(totals[n][-1] / totals[n][0]),
+        r"N/N0 $\approx$ " + "{:.3f}".format(totals_ramk[n][-1] / totals_ramk[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
         transform=ax.transAxes,
     )
     ax.text(
-        0.10,
+        0.46,
         0.42,
         "C = {:.1f}".format(C),
         fontsize=11,
@@ -167,12 +189,12 @@ def densi_n():
         verticalalignment="center",
         transform=ax.transAxes,
     )
-    ax.legend(loc="lower left", shadow=True)
+    ax.legend(loc="best", shadow=True)
     ax.set_xlabel("Volume [mm³]")
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
     fig.savefig(
-        path.join(dir, "number_density_func_scott1968_teste.pdf"),
+        path.join(dir, "scott1968_density.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -189,66 +211,92 @@ def densi_n_t():
 
     n = grids[-1]
     ax.loglog(
-        sol[n].xi,
-        sol[n].number_density[-1],
+        sol_ramk[n].xi,
+        sol_ramk[n].number_density[-1],
         ls="",
         marker=next(markers),
-        label="MOC com M={0}, t={1:.0f} s".format(n, time[-1]),
+        label="MOC Ramk. t={1:.0f} s".format(n, time[-1]),
     )
+
     ax.loglog(
-        sol[n].xi,
-        sol[n].number_density[t2],
+        sol_ramk[n].xi,
+        sol_ramk[n].number_density[-1],
         ls="",
         marker=next(markers),
-        label="MOC com M={0}, t={1:.0f} s".format(n, time[t2]),
+        label="MOC Ramk. t={1:.0f} s".format(n, time[t2]),
+    )
+
+    ax.loglog(
+        sol_hidy[n].xi,
+        sol_hidy[n].number_density[t2],
+        ls="",
+        marker=next(markers),
+        label="MOC Hidy t={1:.0f} s".format(n, time[-1]),
+    )
+
+    ax.loglog(
+        sol_hidy[n].xi,
+        sol_hidy[n].number_density[t2],
+        ls="",
+        marker=next(markers),
+        label="MOC Hidy t={1:.0f} s".format(n, time[t2]),
     )
     ax.loglog(
         v,
         scott_pbe_solution3(v, time[-1], C=C, xi0=2.0 * v0, N0=N0),
         "--k",
         linewidth=1.5,
-        label="Analítico t={:.0f} s".format(time[-1]),
+        label="Analítico {:.0f} s".format(time[-1]),
     )
     ax.loglog(
         v,
         scott_pbe_solution3(v, time[t2], C=C, xi0=2.0 * v0, N0=N0),
         ":k",
         linewidth=1.5,
-        label="Analítico t={:.0f} s".format(time[t2]),
+        label="Analítico {:.0f} s".format(time[t2]),
     )
     ax.text(
-        0.26,
-        0.74,
-        r"N/N0 $\approx$ " + "{:.3f}".format(totals[n][-1] / totals[n][0]),
+        0.6,
+        0.9,
+        r"N/N0 $\approx$ " + "{:.3f}".format(totals_ramk[n][-1] / totals_ramk[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
         transform=ax.transAxes,
     )
     ax.text(
-        0.78,
-        0.88,
-        r"N/N0 $\approx$ " + "{:.3f}".format(totals[n][t2] / totals[n][0]),
+        0.55,
+        0.72,
+        r"N/N0 $\approx$ " + "{:.1f}".format(totals_ramk[n][t2] / totals_ramk[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
         transform=ax.transAxes,
     )
     ax.text(
-        0.10,
-        0.35,
+        0.485,
+        0.45,
         "C = {:.1f}".format(C),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
         transform=ax.transAxes,
     )
-    ax.legend(loc="lower left", shadow=True)
+    ax.text(
+        0.48,
+        0.35,
+        "M = {:.0f}".format(grids[-1]),
+        fontsize=11,
+        horizontalalignment="center",
+        verticalalignment="center",
+        transform=ax.transAxes,
+    )
+    ax.legend(loc="best", shadow=True)
     ax.set_xlabel("Volume [mm³]")
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
     fig.savefig(
-        path.join(dir, "number_density_t_scott1968_teste.pdf"),
+        path.join(dir, "scott1968_n_t.pdf"),
         backend="pgf",
         bbox_inches="tight",
         pad_inches=0.05,
@@ -258,7 +306,7 @@ def densi_n_t():
 
 
 # plot_n0_init()
-#fig = total_numbers()
+fig = total_numbers()
 fig = densi_n()
-# fig = densi_n_t()
+#fig = densi_n_t()
 plt.show()

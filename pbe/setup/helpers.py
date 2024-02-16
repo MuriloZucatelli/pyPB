@@ -132,6 +132,7 @@ def plt_config2(
         "legend.fontsize": 10,
         "legend.numpoints": 1,
         "legend.handletextpad": 0.2,
+        "legend.framealpha": 0.2,
         "lines.markersize": 3,
         # 'xtick.labelsize': 7,
         # 'ytick.labelsize': 7,

@@ -1,14 +1,19 @@
-from numpy import arange, genfromtxt, abs, array, pi, set_printoptions
-from scipy.optimize import minimize, differential_evolution
-import sys
-import os.path as path
+from numpy import arange, abs, array, pi, set_printoptions, diff
+#from numpy import genfromtxt, zeros_like
+#from scipy.optimize import minimize, differential_evolution
+from sys import path as sph
+from os.path import join, abspath, dirname
+from pandas import read_excel
+#import time
+#import pickle
+#import matplotlib.pyplot as plt
 
-dir = path.dirname(__file__)
+dir = dirname(__file__)
 if __name__ == "__main__":
-    sys.path.append(path.abspath(path.join(dir, "..\\..")))
+    sph.append(abspath(join(dir, "..\\..\\..\\2. APP/")))
+    sph.append(abspath(join(dir, "..\\..")))
 from pbe.app.dtg_class import DTGSolution, import_flow_DSD, DTG_experiment, get_location
-import time
-import pickle
+
 
 set_printoptions(precision=4)
 
@@ -19,9 +24,30 @@ set_printoptions(precision=4)
 
 """
 
+
 # Pasta contendo as distribuições de tamanho de gotas
-pasta = r"OneDrive\NEMOG Murilo\00 Circuito DTG\4. Compilado\LP_PB"
-experiments = import_flow_DSD(get_location(pasta))
+pasta = r"OneDrive/NEMOG Murilo/00 Circuito DTG/6. Compilado/LP_PB"
+experiments = import_flow_DSD(get_location(pasta), teste=[88], marco=[2])
+experiments.select_DTG(X=["E_ANM", "E_FlowLine"])
+experiments.select_DTG(X=["E_ANM"])
+experiments.calc_DP_GV()
+experiments.get_prop(dir)
+# Como obter apenas uma DTG:
+# ID vem de:
+# experiments.compares['E_ANM'][0] ou [1], 0: antes, [1]: depois
+# experiments.get_DTG(teste=88, ID=2)
+
+# Obtem as classe do Bettersizer e define a malha
+# Create mesh
+x = read_excel(dir + "/classes.xlsx")
+# diameter is in micrometer and volume is in mm³
+d, v = x["d"].to_numpy(), x["v [mm³]"].to_numpy()
+dxi = diff(v)
+xi = v[:-1] + diff(v) / 2
+# Remover classes zeros
+sl = slice(8, -12)
+dxi, xi = dxi[sl], xi[sl]
+M = len(xi)
 
 
 def teste1_solve(C, experiment: DTG_experiment):
@@ -49,3 +75,4 @@ for i in range(len(grids)):
 pbe_sol = []
 for e in experiments:
     pbe_sol.append(teste1_solve(C0, experiments))
+

@@ -15,3 +15,5 @@ pbe/validationData/*.ods
 pbe/*.pdf
 versions
 *.venvpbe
+*.venvnote
+*venvnote

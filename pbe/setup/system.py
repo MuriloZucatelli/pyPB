@@ -20,6 +20,30 @@ class Fluid:
         self.mu = mu
 
 
+class Fluid2:
+    """Definição basica do fluido"""
+
+    def __init__(self, name: str, rho: pd.DataFrame, mu: pd.DataFrame) -> None:
+        """Inicializa o fluido
+
+        Args:
+            name (str): nome
+            rho (DataFrame): massa especifica
+            mu (DataFrame): dynamic viscosity
+        """
+        self.name = name
+        self.rho = rho
+        self.mu = mu
+
+
+class Prop:
+    def __init__(self, emulsion: Fluid2, water: Fluid2, oil: Fluid2) -> None:
+        """Inicializa o sistema de propriedades"""
+        self.emulsion = emulsion
+        self.water = water
+        self.oil = oil
+
+
 class ContinuosPhase(Fluid):
     """Fase continua"""
 

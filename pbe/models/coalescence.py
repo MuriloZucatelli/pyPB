@@ -42,17 +42,29 @@ class coalescenceModels:
         self.dp = dp
         self.interface = interface
 
-        match name:
-            case "coulaloglou":
-                self.Q = self.coulaloglou_Q
-            case "alopaeus":
-                self.Q = None
-            case "mitre":
-                self.Q = self.mitre_Q
-            case "chesters":
-                self.Q = self.chesters_Q
-            case None:
-                self.Q = None
+        if name == "coulaloglou":
+            self.Q = self.coulaloglou_Q
+        elif name == "alopaeus":
+            self.Q = None
+        elif name == "mitre":
+            self.Q = self.mitre_Q
+        elif name == "chesters":
+            self.Q = self.chesters_Q
+        elif name == None:
+            self.Q = None
+
+
+        #match name:
+        #    case "coulaloglou":
+        #        self.Q = self.coulaloglou_Q
+        #    case "alopaeus":
+        #        self.Q = None
+        #    case "mitre":
+        #        self.Q = self.mitre_Q
+        #    case "chesters":
+        #        self.Q = self.chesters_Q
+        #    case None:
+        #        self.Q = None
 
     def coulaloglou_Q(self, v1: float = None, v2: float = None) -> float:
         """Coalescence rate from coulaloglou and Tavlarides
