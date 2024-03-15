@@ -64,7 +64,7 @@ M = len(xi)
 # Reduz as classes experimentais também
 experiments.reduce_DTG(M, sl)
 
-
+#Teste 
 def teste1_solve(M, xi, dxi, C, t, IDs, exp, data):
     mp = array(C)
     mp[3] *= 1e13
