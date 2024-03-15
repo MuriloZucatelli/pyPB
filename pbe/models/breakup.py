@@ -63,8 +63,7 @@ class breakupModels:
         elif name == None:
             self.gamma = None
 
-
-        #match name:
+        # match name:
         #    case "coulaloglou":
         #        self.gamma = self.coulaloglou_gamma_damping
         #    case "alopaeus":
@@ -104,6 +103,7 @@ class breakupModels:
         # Experimental parameters
         CCa = 1.65e-4  # The minimum attainable droplet diameter at the
         C_Re = 3 / 20  # outlet of the test section could be correlated with
+        # Eq. 27
         Stk = self.domain.theta / sqrt((self.cp.mu / self.cp.rho) / self.cp.epsilon)
         Re_max = self.cp.Q / (self.domain.l * self.cp.mu / self.cp.rho)
         Ca_crit = CCa * Stk * Re_max ** (-C_Re)
@@ -314,9 +314,8 @@ class DDSD:
             self.beta = None
         elif name == None:
             self.beta = None
-        
 
-        #match name:
+        # match name:
         #    case "coulaloglou":
         #        self.beta = self.coulaloglou_beta
         #    case "alopaeus":

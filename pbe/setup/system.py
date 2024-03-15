@@ -70,9 +70,9 @@ class DispersePhase(Fluid):
         phi: float,
         rho: float,
         sigma: float,
-        v_max: float,
-        v0: float,
-        sigma0: float,
+        v_max: float = None,
+        v0: float = None,
+        sigma0: float = None,
         mu: float = None,
     ):
         """Cria o objeto de fase dispersa
@@ -95,39 +95,30 @@ class DispersePhase(Fluid):
 
 
 class Domain:
-    """domainProperties:
-    description: is a dictionary with properties of the computational
-    domain and discretization parameters
-    Required fields:
-    theta       mean residence time
-    M           number of classes used
-    V           domain volume
-    D           Possible impeller diameter [m]
-    Nstar       Possible revolutions per second, sec-1
-    w           Possible width from valve
-    U           Possible fluid velocity
-    """
-
     def __init__(
         self,
-        theta: float,
-        V: float,
-        M: float,
+        theta: float = None,
+        tres: float = None,
+        V: float = None,
+        M: float = None,
         D: float = None,
         Nstar: float = None,
         w: float = None,
     ) -> None:
         """domainProperties
-
+         description: is a dictionary with properties of the computational
+         domain and discretization parameters
         Args:
-            theta (float): _description_
+            theta (float): mean residence time
             V (float): domain volume
             M (float): number of classes
             D (float, optional): Impeler diameter. Defaults to None.
-            Nstar (float, optional): Impeler revolutions. Defaults to None.
-            w (float) : Width of channel (Mitre)
+            Nstar (float, optional): Impeler revolutions per second, sec-1. Defaults to None.
+            w (float): Width of channel (Mitre)
+            U (float): Possible fluid velocity
         """
         self.theta = theta
+        self.tres = tres
         self.V = V
         self.M = M
         self.D = D

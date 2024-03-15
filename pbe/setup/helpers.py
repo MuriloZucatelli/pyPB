@@ -3,7 +3,6 @@ import matplotlib as mpl
 # mpl.use("agg")
 import matplotlib.pyplot as plt
 from numpy import sqrt
-import seaborn as sns
 
 # mpl.style.use('ggplot')
 

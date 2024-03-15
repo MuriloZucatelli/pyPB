@@ -11,18 +11,18 @@ from numpy import (
     geomspace,
 )
 from itertools import cycle
-import sys
+from sys import path as sph
 import os.path as path
 import matplotlib.pyplot as plt
 from matplotlib import ticker
 
 dir = path.dirname(__file__)
 if __name__ == "__main__":
-    sys.path.append(path.abspath(path.join(dir, "..\\..")))
+    sph.insert(1, path.abspath(path.join(dir, "..\\..")))
 from pbe.solvers.moc_ramk import MOCSolution as MOCramk
 from pbe.solvers.moc import MOCSolution as MOChidy
 from pbe.setup.helpers import plt_config2
-from tests.test_moc import ziff_total_number_solution, ziff_pbe_solution
+from testes.test_moc import ziff_total_number_solution, ziff_pbe_solution
 
 """
 Comparative between Hidy and Ramkrishna
@@ -39,7 +39,7 @@ Comparative between Hidy and Ramkrishna
 """
 
 grids = [10, 50]  # Número de classes utilizadas na discretização
-time = arange(0.0, 1000.0, 0.01)  # Tempo e passo
+time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 v0 = 7.87011e-05 / 1e9
 dv0 = 2.65025e-05
 r = 1.445124894

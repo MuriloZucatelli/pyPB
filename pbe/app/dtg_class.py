@@ -1,9 +1,10 @@
 import pandas as pd
+from pandas import DataFrame
 
 # from .classes import FLOW
 from numpy import arange, pi, array, interp, polyfit, polyval
 from pbe.setup.system import Domain, DispersePhase, ContinuosPhase, FLOW, Prop, Fluid2
-from pbe.solvers.moc import MOCSolution
+from pbe.solvers.moc_ramk import MOCSolution
 from pbe.models import breakup, coalescence
 from os.path import join
 from pathlib import Path
@@ -23,38 +24,43 @@ from Bettersizer.setup import data_def as dd_b
 class DTGSolution:
     def __init__(
         self,
-        M=10,  # number of classes
+        M: int = 10,  # number of classes
+        xi=None,
+        dxi=None,
         time=None,
-        exp: pd.DateFrame = None,
+        exp: DataFrame = None,
         data=None,
+        IDs=None,
+        marco=None,
         model_parameters=None,
     ):
+
         self.D = 0.02095  # [m] pipe diameter diameter
         self.L = 2.5  # [m] length diameter
+        self.tres = 1  # [s] tempo de residência #TODO: Calcular
 
         # oil
         self.cp = ContinuosPhase(
             name=data.tableprop.oil.name,
-            rho=exp[data.tableprop.oil.name + " [kg/m³]"],  # [kg/m³]
+            rho=exp[data.tableprop.oil.name + " [kg/m³]"],
             mu=exp[data.tableprop.oil.name + " [Pa.s]"],
         )  # [P = kg * m^-1 s^-1]  dynamic viscosity
 
-        self.cp.epsilon = calc_epsilon(U, self.D, self.cp.mu, self.cp.rho)
+        self.cp.epsilon = exp["DP[bar]"]
+        # self.cp.epsilon = calc_epsilon(U, self.D, self.cp.mu, self.cp.rho)
 
         # water solution
         self.dp = DispersePhase(
             name=data.tableprop.water.name,
-            phi=exp["C_agua [%]"],
-            rho=exp[data.tableprop.water.name + " [kg/m³]"],  # [kg/m3]
+            phi=exp["C_agua [%]"] / 100,
+            rho=exp[data.tableprop.water.name + " [kg/m³]"],
             mu=exp[data.tableprop.water.name + " [Pa.s]"],
             sigma=exp["sigma [N/m]"],  # [P = kg * m^-1 s^-1]
         )
 
-        self.domain = Domain(theta=theta, V=pi * self.L * (self.D / 2) ** 2, M=M)
+        self.domain = Domain(V=pi * self.L * (self.D / 2) ** 2, M=M)
 
         self.set_parameters(model_parameters)
-        self.nf0()
-        vmin = None
 
         # Função distribuição de gotas filhas
         beta = breakup.DDSD.coulaloglou_beta
@@ -63,24 +69,23 @@ class DTGSolution:
         g = breakup.breakupModels(
             name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
         ).gamma
-        # Função frequencia de Coalescencia
+        # Função frequencia de coalescencia
         Qf = coalescence.coalescenceModels(
             name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
         ).Q
 
-        # Initial probability density function distribuition
-        # A0 = DSD.analitico(dp=self.dp).A0
+        self.N0 = self.calc_N0(data, exp["N_escoam"], marco, IDs[0], xi)
+        # N0: 1/mm³ ou 1/m³
 
         self.moc = MOCSolution(
             M,
             time,
-            self.dp.v_max / M,
-            n0=self.n0,
-            xi0=vmin,
+            xi=xi,
+            dxi=dxi,
+            N0=self.N0,
             beta=beta,
             gamma=g,
             Q=Qf,
-            theta=self.domain.theta,
         )
 
     def set_parameters(self, model_parameters):
@@ -89,17 +94,26 @@ class DTGSolution:
         else:
             self.C = model_parameters
 
-    def n0(self, v):
-        return 0 * v
-
-    def nf0(self):
-        self.nf0 = self.domain.V / self.domain.theta
+    def calc_N0(self, data, teste, marco, ID, xi):
+        # dtg['freq_v']/100 : 0 a 1
+        dtg = data.get_DTG(teste=teste, marco=marco, ID=ID)
+        return (dtg["freq_v"] / 100) * (self.dp.phi) / xi
 
     @property
     def pbe_phi(self):
         return self.moc.total_volume / self.domain.V
 
 
+#
+#
+#
+#
+#
+#
+#
+#
+#
+#
 # Function used by class
 def calc_epsilon(U: float, D: float, mu: float, rho: float):
     """Calcula as propriedades turbulentas
@@ -168,8 +182,8 @@ class Import_flow_DSD2:
     def get_teste(self):
         """Extrai o/os testes para analise de BP"""
 
-        def grupa_t(df: pd.DataFrame, key: str):
-            dfn = pd.DataFrame()
+        def grupa_t(df: DataFrame, key: str):
+            dfn = DataFrame()
             dfg = df.groupby(key)
             testes = list(set(dfg.groups) & set(self.teste))
             for t in testes:
@@ -192,8 +206,8 @@ class Import_flow_DSD2:
     def get_marco(self):
         """Extrai o/os marcos para analise de BP"""
 
-        def grupa_m(df: pd.DataFrame, key: str):
-            dfn = pd.DataFrame()
+        def grupa_m(df: DataFrame, key: str):
+            dfn = DataFrame()
             N_esc = dd_c.flow_ext_df_name["numero_escoamento"]
             for t in self.teste:
                 dfg = df.groupby(by=N_esc).get_group(t)
@@ -203,8 +217,8 @@ class Import_flow_DSD2:
                     dfn = pd.concat([dfn, dfgm.get_group(m)], ignore_index=True)
             return dfn
 
-        def ajuste(df: pd.DataFrame, fe: pd.DataFrame):
-            dfn = pd.DataFrame()
+        def ajuste(df: DataFrame, fe: DataFrame):
+            dfn = DataFrame()
             ti = dd_c.flow_ext_df_name["tempo_inicial"]
             tf = dd_c.flow_ext_df_name["tempo_final"]
             faixa = pd.concat([fe[ti], fe[tf]], axis=1)
@@ -249,7 +263,7 @@ class Import_flow_DSD2:
         """
 
         try:
-            dfn = pd.DataFrame()
+            dfn = DataFrame()
             xs = list([])
             dtgg = self.DTG.groupby("ID")
             self.compares = dict()
@@ -367,12 +381,12 @@ class Import_flow_DSD2:
             """
             if C is None:
                 poly1 = polyfit(df.mu["T [°C]"], df.mu["mu [Pa.s]"], deg=1)
-                mu = pd.DataFrame(
+                mu = DataFrame(
                     polyval(poly1, self.dados[T]),
                     columns=[df.name + " [Pa.s]"],
                 )
                 poly1 = polyfit(df.rho["T [°C]"], df.rho["rho [kg/m³]"], deg=3)
-                rho = pd.DataFrame(
+                rho = DataFrame(
                     polyval(poly1, self.dados[T]),
                     columns=[df.name + " [kg/m³]"],
                 )
@@ -388,7 +402,7 @@ class Import_flow_DSD2:
                         )
                     )
 
-                mu, rho = pd.DataFrame(a, columns=[df.name + " [Pa.s]"]), pd.DataFrame(
+                mu, rho = DataFrame(a, columns=[df.name + " [Pa.s]"]), DataFrame(
                     b, columns=[df.name + " [kg/m³]"]
                 )
             dados = pd.concat([dados, mu, rho], axis=1)
@@ -412,7 +426,7 @@ class Import_flow_DSD2:
             sl (_type_): slice for DataFrame rows
         """
         a = 0
-        DTG = pd.DataFrame([])
+        DTG = DataFrame([])
         for t in self.teste:
             pass
         for t in self.marco:  # loop  testes
@@ -432,6 +446,8 @@ class Import_flow_DSD2:
                         print("Ja reduzido")
         if a:
             self.DTG = DTG
+
+    # def calc_N(self):
 
 
 class DTG_experiment:
