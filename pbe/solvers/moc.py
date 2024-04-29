@@ -82,7 +82,11 @@ class MOCSolution:
         # Number of droplets per m³ of discrete phase (number concentration)
         if n0 is None and N0 is None:
             N0 = zeros_like(self.xi)
-        elif N0 is None or (dxi is not None or isinstance(self.dxi, float)) and n0 is not None:
+        elif (
+            N0 is None
+            or (dxi is not None or isinstance(self.dxi, float))
+            and n0 is not None
+        ):
             N0 = array(
                 [
                     quad(n0, self.xi[i] - self.dxi / 2.0, self.xi[i] + self.dxi / 2.0)[
@@ -95,7 +99,7 @@ class MOCSolution:
             N0 = array(
                 [N0(self.xi[i]) for i in range(M)]
             )  # initial number concentration
-        print(sum(N0))
+        #print(sum(N0))
         # plt.plot(self.xi, N0, label=str(Nclasses))
         # plt.legend()
         if nu is None:
@@ -187,7 +191,8 @@ class MOCSolution:
 
     @property
     def d32(self):
-        return (6 / pi * sum(self.N[-1] * self.xi) / sum(self.N[-1])) ** (1.0 / 3)
+        # return (6 / pi * sum(self.N[-1] * self.xi) / sum(self.N[-1])) ** (1.0 / 3)
+        return sum(self.N[-1] * self.xi_d**3) / sum(self.N[-1] * self.xi_d**2)
         # (6/pi * sum(NiVi)/sum(N))^(1/3)
 
     @property

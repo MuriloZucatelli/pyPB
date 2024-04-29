@@ -86,7 +86,7 @@ class MOCSolution:
         self.nf0 = nf0
         # inflow and outflow replaced with relaxation to equilibrium
         # process with relaxation time equal to residence time theta
-        self.theta = theta  # mean residence time
+        # self.theta = theta  # mean residence time
 
         # Non-uniform grid
         # a = 2 mantem os extremos com dx na mesma medida que os
@@ -303,8 +303,8 @@ class MOCSolution:
 
             dNdt += Rab
 
-        if self.theta is not None:
-            dNdt += self.nf0 * self.A0 - N / self.theta
+        # if self.theta is not None:
+        #    dNdt += self.nf0 * self.A0 - N / self.theta
 
         # print('Time = {0:g}'.format(t))
         return dNdt
@@ -324,8 +324,17 @@ class MOCSolution:
 
     @property
     def d32(self):
-        return (6 / pi * sum(self.N[-1] * self.xi) / sum(self.N[-1])) ** (1.0 / 3)
+        """D32 em micras
+        O correto, o de cima não bate com o bettersizer
+        """
+        return (sum(self.N[-1] * self.xi_d**3) / sum(self.N[-1] * self.xi_d**2))
         # (6/pi * sum(NiVi)/sum(N))^(1/3)
+
+    @property
+    def d43(self):
+        """D43 em micras
+        """
+        return (sum(self.N[-1] * self.xi_d**4) / sum(self.N[-1] * self.xi_d**3))
 
     @property
     def xi_d(self):  # xi: volume, xi_d: diametro
