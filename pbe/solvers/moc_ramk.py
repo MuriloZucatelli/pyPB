@@ -179,7 +179,7 @@ class MOCSolution:
             self.nik = zeros((self.M, self.M))  # β(v,v′)
             for i in range(0, self.M):
                 for k in range(i, self.M):
-                    if i != k:
+                    if i != k:          # Pq i ñ tem q ser diferente de M
                         nik = lambda v: nik1(v, self.xi, i, k)
                         self.nik[i, k] += quad(nik, self.xi[i], self.xi[i + 1])[0]
                     if i != 0:
@@ -201,7 +201,7 @@ class MOCSolution:
 
             elif mesh == "geometric":
                 pass
-            print(mesh)
+            #print(mesh)
         else:
             self.gamma = None
             self.nik = None
@@ -341,7 +341,7 @@ class MOCSolution:
         return (6 / pi * self.xi) ** (1.0 / 3)
 
     @property
-    def total_volume(self):
+    def phase_fraction(self):
         """Calculate de total volume concentration of discrete phase
             $alpha$ = \\sum $alpha_i = \\sum (N_i v_i)$
         Returns:
@@ -350,7 +350,7 @@ class MOCSolution:
         return nsum(self.N[-1] * self.xi)  # integral de NiVi, N[-1] is last time
 
     @property
-    def initial_total_volume(self):
+    def initial_phase_fraction(self):
         """Calculate de total volume concentration of discrete phase
             $alpha$ = \\sum $alpha_i = \\sum (N_i v_i)$
         Returns:
