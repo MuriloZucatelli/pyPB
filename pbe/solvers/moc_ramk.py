@@ -12,8 +12,9 @@ from numpy import (
     diff,
     fill_diagonal,
 )
+
 from numpy import sum as nsum
-from scipy.integrate import odeint, quad
+from scipy.integrate import odeint, quad, solve_ivp
 import matplotlib.pyplot as plt
 import numpy as np
 
@@ -40,7 +41,7 @@ class MOCSolution:
         beta=None,
         gamma=None,
         Q=None,
-        nu=None,
+        varsigma=None,
         theta=None,
         nf0=None,
         A0=None,
@@ -48,23 +49,23 @@ class MOCSolution:
         """
 
         Args:
-            M (_type_): number of classes
-            t (_type_): time span
-            dxi (_type_): grid size
-            xi (_type_): grid
-            v (_type_): volume classes
-            n0 (_type_, optional): number density function.
+            M: number of classes
+            t: time span
+            dxi: grid size
+            xi: grid
+            v: volume classes
+            n0: number density function.
                 initial distribuition number of droplets per m³ of discrete phase. Defaults to None.
-            N0 (_type_): Number concentration
+            N0: Number concentration
                 number of droplets by volume of disperse phase
-            xi0 (_type_, optional): initial droplet volume. Defaults to None.
-            beta (_type_, optional): DDSD. Defaults to None.
-            gamma (_type_, optional): Breakup frequency. Defaults to None.
-            Q (_type_, optional): Coalescence frequency. Defaults to None.
-            theta (_type_, optional): mean residence time. Defaults to None.
-            nu(_type, optional): number of droplets formed of a break of a droplet
-            nf0 (_type_, optional): number feed rate of drops, sec-1. Defaults to None.
-            A0 (_type_, optional): probability density of droplet size in the feeds. Defaults to None.
+            xi0: initial droplet volume. Defaults to None.
+            beta: DDSD. Defaults to None.
+            gamma: Breakup frequency. Defaults to None.
+            Q: Coalescence frequency. Defaults to None.
+            theta: mean residence time. Defaults to None.
+            varsigma: number of droplets formed of a break of a droplet
+            nf0: number feed rate of drops, sec-1. Defaults to None.
+            A0: probability density of droplet size in the feeds. Defaults to None.
         """
         self.M = M
         self.t = t
@@ -164,14 +165,19 @@ class MOCSolution:
 
         # plt.plot(self.xi, N0, label=str(self.M))
         # plt.legend()
-        if nu is None:
-            self.nu = 2.0 * ones(self.M)  # Binary breakup for all droplets
+        if varsigma is None:
+            self.varsigma = 2.0 * ones(self.M)  # Binary breakup for all droplets
+        elif isinstance(varsigma, float) or isinstance(varsigma, int):
+            self.varsigma = varsigma * ones(self.M)  # Equal number for all droplets
+        else:
+            self.varsigma = varsigma
 
         def nik1(v, xi, i, k):
-            return ((xi[i + 1] - v) / (xi[i + 1] - xi[i])) * beta(v, xi[k])
+            # xi[k] > v, xi[k] = v' (Mother droplet)
+            return ((xi[i + 1] - v) / (xi[i + 1] - xi[i])) * beta(v, xi[k], i)
 
         def nik2(v, xi, i, k):
-            return ((v - xi[i - 1]) / (xi[i] - xi[i - 1])) * beta(v, xi[k])
+            return ((v - xi[i - 1]) / (xi[i] - xi[i - 1])) * beta(v, xi[k], i)
 
         # Kernels setup avaliando a função beta e gamma para cada classe
         if gamma is not None and beta is not None:
@@ -179,7 +185,7 @@ class MOCSolution:
             self.nik = zeros((self.M, self.M))  # β(v,v′)
             for i in range(0, self.M):
                 for k in range(i, self.M):
-                    if i != k:          # Pq i ñ tem q ser diferente de M
+                    if i != k:  # Pq i ñ tem q ser diferente de M
                         nik = lambda v: nik1(v, self.xi, i, k)
                         self.nik[i, k] += quad(nik, self.xi[i], self.xi[i + 1])[0]
                     if i != 0:
@@ -201,7 +207,7 @@ class MOCSolution:
 
             elif mesh == "geometric":
                 pass
-            #print(mesh)
+            # print(mesh)
         else:
             self.gamma = None
             self.nik = None
@@ -256,7 +262,7 @@ class MOCSolution:
                             )
                         elif v <= self.xi[i]:
                             pass
-            self.eta = eta
+            self.eta = eta # NOTE: Matriz 3-Dim grande
 
             self.Q = array(
                 [
@@ -280,16 +286,21 @@ class MOCSolution:
                 ]
             )
         # Solve procedure
-        self.N = odeint(lambda NN, t: self.RHS(NN, t), N0, t)
+        # self.N = odeint(lambda NN, t: self.RHS(t, NN), N0, t)
+        # NOTE: 1D PB is a initial boundary problem
+        self.N = solve_ivp(
+            self.RHS, (t[0], t[-1]), N0, t_eval=t, method="Radau"
+        )["y"].T
+        # Solução no tempo t sol['y'][:,-1]
 
-    def RHS(self, N, t):
+    def RHS(self, t, N):
         dNdt = zeros_like(N)
 
         if self.gamma is not None and self.nik is not None:
             # Death breakup term
             dNdt -= N * self.gamma
             # Birth breakup term
-            dNdt += dot(self.nu * self.nik, N * self.gamma)
+            dNdt += dot(self.varsigma * self.nik, N * self.gamma)
 
         if self.Q is not None:
             dNdt -= N * dot(self.Q, N)
@@ -297,9 +308,7 @@ class MOCSolution:
             Rab = zeros_like(dNdt)
             for i in arange(self.M):
                 j, k = self.condjbk[i][0], self.condjbk[i][1]
-                Rab[i] = dot(
-                    self.D[j, k] * self.eta[i, j, k], self.Q[j, k] * N[j] * N[k]
-                )
+                Rab[i] = dot(self.D[j, k] * self.eta[i, j, k], self.Q[j, k] * N[j] * N[k])
 
             dNdt += Rab
 
@@ -327,14 +336,13 @@ class MOCSolution:
         """D32 em micras
         O correto, o de cima não bate com o bettersizer
         """
-        return (sum(self.N[-1] * self.xi_d**3) / sum(self.N[-1] * self.xi_d**2))
+        return sum(self.N[-1] * self.xi_d**3) / sum(self.N[-1] * self.xi_d**2)
         # (6/pi * sum(NiVi)/sum(N))^(1/3)
 
     @property
     def d43(self):
-        """D43 em micras
-        """
-        return (sum(self.N[-1] * self.xi_d**4) / sum(self.N[-1] * self.xi_d**3))
+        """D43 em micras"""
+        return sum(self.N[-1] * self.xi_d**4) / sum(self.N[-1] * self.xi_d**3)
 
     @property
     def xi_d(self):  # xi: volume, xi_d: diametro
