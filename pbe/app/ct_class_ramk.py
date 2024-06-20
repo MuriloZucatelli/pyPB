@@ -1,4 +1,4 @@
-from numpy import arange
+from numpy import arange, geomspace
 from scipy.integrate import quad
 from pbe.setup.system import Domain, DispersePhase, ContinuosPhase
 from pbe.solvers.moc_ramk import MOCSolution
@@ -101,22 +101,21 @@ class CTSolution:
             dp=self.dispersephase,
         ).Q
 
-        # Função distribuição inicial
+        # Função probabilidade de distribuição inicial (Esse é o meu n0)
         A0 = DSD.analitico(dp=self.dispersephase).A0
 
+        xi = geomspace(vmax / M, vmax, M, endpoint=True)
         self.moc = MOCSolution(
             M,
             time,
-            dxi=vmax / M,
-            n0=self.n0,
+            xi=xi,
+            # dxi=vmax / M,
+            # n0=self.n0,
             n0=A0,
-            xi0=vmin,
+            # xi0=vmin,
             beta=beta,
             gamma=g,
             Q=Qf,
-            theta=self.domain.theta,
-            nf0=self.nf0,
-            A0=A0,
         )
 
     def n0(self, v):  # initial density function

@@ -262,7 +262,7 @@ class MOCSolution:
                             )
                         elif v <= self.xi[i]:
                             pass
-            self.eta = eta # NOTE: Matriz 3-Dim grande
+            self.eta = eta  # NOTE: Matriz 3-Dim grande
 
             self.Q = array(
                 [

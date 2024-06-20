@@ -69,7 +69,7 @@ for g in grids:
 
 totals_ramk = dict((n, sol_ramk[n].total_numbers) for n in sol_ramk)
 totals_hidy = dict((n, sol_hidy[n].total_numbers) for n in sol_ramk)
-volume = dict((n, sol_ramk[n].total_volume) for n in sol_ramk)
+volume = dict((n, sol_ramk[n].phase_fraction) for n in sol_ramk)
 
 v = linspace(0, vmax, 200)
 Na = scott_total_number_solution3(time, C=C, N0=N0)
