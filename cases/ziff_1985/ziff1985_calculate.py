@@ -27,7 +27,7 @@ Case setup based on:
 """
 
 grids = [10, 40, 160]  # Número de classes utilizadas na discretização
-grids = [15]
+grids = [150]
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 # N0 = 1
 vmax = 1.0  # Volume máximo

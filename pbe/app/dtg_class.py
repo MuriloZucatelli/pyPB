@@ -5,7 +5,7 @@ from pandas import DataFrame
 from numpy import arange, pi, array, interp, polyfit, polyval
 from pbe.setup.system import Domain, DispersePhase, ContinuosPhase, FLOW, Prop, Fluid2
 from pbe.solvers.moc_ramk import MOCSolution
-from pbe.models import breakup, coalescence
+from pbe.models import breakup, coalescence, modelParameters
 from os.path import join
 from pathlib import Path
 from os import environ
@@ -27,17 +27,27 @@ class DTGSolution:
         M: int = 10,  # number of classes
         xi=None,
         dxi=None,
-        time=None,
+        timesteps=100,
         exp: DataFrame = None,
         data=None,
         IDs=None,
         marco=None,
         model_parameters=None,
+        breakupmodel="coulaloglou",
+        coalescencemodel="coulaloglou",
+        varsigma=2.0,
+        DDSDmodel="coulaloglou",
+        fator=5,
     ):
 
         self.D = 0.02095  # [m] pipe diameter diameter
         self.L = 2.5  # [m] length diameter
-        self.tres = 1  # [s] tempo de residência #TODO: Calcular
+        self.fdiss = fator
+
+        # NOTE: Adotando um valor de 5 vezes o diâmetro do tubo
+        # para o comprimento de dissipação
+        self.Ldiss = self.D * fator
+        self.Vdiss = self.Ldiss * pi * self.D**2 / 4  # m³
 
         # oil
         self.cp = ContinuosPhase(
@@ -46,9 +56,11 @@ class DTGSolution:
             mu=exp[data.tableprop.oil.name + " [Pa.s]"],
         )  # [P = kg * m^-1 s^-1]  dynamic viscosity
 
-        self.cp.epsilon = exp["DP[bar]"]
-        # self.cp.epsilon = calc_epsilon(U, self.D, self.cp.mu, self.cp.rho)
+        self.Q = exp["FT-01[kg/min]"] / (60 * self.cp.rho)
+        tres = self.Vdiss / self.Q  # [s] tempo de residência
+        self.cp.epsilon = self.calc_epsilon(exp)
 
+        self.time = arange(0.0, tres, tres / timesteps)
         # water solution
         self.dp = DispersePhase(
             name=data.tableprop.water.name,
@@ -58,41 +70,52 @@ class DTGSolution:
             sigma=exp["sigma [N/m]"],  # [P = kg * m^-1 s^-1]
         )
 
-        self.domain = Domain(V=pi * self.L * (self.D / 2) ** 2, M=M)
+        self.domain = Domain(
+            V=pi * self.L * (self.D / 2) ** 2,
+            M=M,
+            xi=xi,
+            dxi=dxi,
+            D=self.D,
+            A=exp["ANM"],
+            tres=tres,
+            Q=self.Q,
+        )
 
         self.set_parameters(model_parameters)
+        args = (self.mp, self.domain, self.cp, self.dp)
 
         # Função distribuição de gotas filhas
-        beta = breakup.DDSD.coulaloglou_beta
+        beta = breakup.DDSD(DDSDmodel, *args, varsigma=varsigma).beta
 
         # Função frequencia de quebra
-        g = breakup.breakupModels(
-            name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
-        ).gamma
+        g = breakup.breakupModels(breakupmodel, *args).gamma
+
         # Função frequencia de coalescencia
-        Qf = coalescence.coalescenceModels(
-            name="coulaloglou", C=self.C, domain=self.domain, cp=self.cp, dp=self.dp
-        ).Q
+        Qf = coalescence.coalescenceModels(coalescencemodel, *args).Q
 
         self.N0 = self.calc_N0(data, exp["N_escoam"], marco, IDs[0], xi)
         # N0: 1/mm³ ou 1/m³
 
         self.moc = MOCSolution(
             M,
-            time,
+            self.time,
             xi=xi,
             dxi=dxi,
             N0=self.N0,
             beta=beta,
+            varsigma=varsigma,
             gamma=g,
             Q=Qf,
         )
 
     def set_parameters(self, model_parameters):
         if model_parameters is None:
-            self.C = [0.4, 0.08, 2.8, 1.83e13]
+            # Coulaloglou breakup constante 1 e 2 e coalescence constante 3 e 4
+            # modelParameters.modelParameter()
+            self.mp = [0.4, 0.08, 2.8e-6, 1.83e9]  # C&T original constants
+            # self.C = [0.00481, 0.08, 2.8e-6, 1.83e9] # C&T C1 0.00481 Liao e Lucas
         else:
-            self.C = model_parameters
+            self.mp = modelParameters.modelParameter(model_param=model_parameters)
 
     def calc_N0(self, data, teste, marco, ID, xi):
         # dtg['freq_v']/100 : 0 a 1
@@ -100,8 +123,21 @@ class DTGSolution:
         return (dtg["freq_v"] / 100) * (self.dp.phi) / xi
 
     @property
-    def pbe_phi(self):
-        return self.moc.total_volume / self.domain.V
+    def N2Fv(self):
+        """De concentração numérica para frequencia volumétrica
+        Returns:
+            _type_: Fv
+        """
+        return self.moc.N[-1] * self.moc.xi / self.dp.phi
+
+    def calc_epsilon(self, exp):
+        """Calcula as propriedades turbulentas
+
+        Returns:
+            float: epsilon  m2/s3
+        """
+
+        return exp["dPGV-ANM [Pa]"] * (self.Q) / (self.cp.rho * self.Vdiss)
 
 
 #
@@ -171,7 +207,7 @@ class Import_flow_DSD2:
         df4 = pd.read_excel(f1, sheet_name="flow")
 
         self.flow = FLOW(flow=df4, flow_ext=df1, flow_mean=df2, flow_std=df3)
-
+        print("Reading testes")
         f2 = join(folder, "DTG.xlsx")
         self.DTG = pd.read_excel(f2, sheet_name="DTG")
 
@@ -283,7 +319,7 @@ class Import_flow_DSD2:
         """Obtem a DTG específica de apenas uma análise
 
         Args:
-            teste (int): Qual teste. Defaults to None.
+            teste (int): Qual teste. N_escoam
             ID (int, optional): Identificacao do extrator. Defaults to None.
 
         Returns:
@@ -292,37 +328,19 @@ class Import_flow_DSD2:
         col_b = dd_b.DTG_df_name["numero_escoamento"]  # = "N_escoam"
         dtgg = self.DTG.groupby(col_b).get_group(teste)
         dtgg_ID = dtgg.groupby("ID").get_group(ID)
-        return dtgg_ID.groupby("Marco").get_group(marco)
-
-    def calc_DP_GV(self) -> None:
-        """Calcula a queda de pressao apenas na valvula
-
-        Returns:
-            _type_: _description_
-        """
-        # TODO: implementar isso
-        if self.compares.keys() <= {"E_ANM"}:
-            cols = dd_c.flow_circ_df_name
-            # GV = dd_c.flow_circ_df_name['GV_ANM']
-            # GV_position = self.flow.flow_mean[GV]
-            DP = self.flow.flow_mean[cols["P1"]] - self.flow.flow_mean[cols["P2"]]
-            self.flow.flow_mean["DP[bar]"] = DP
-
-        elif self.compares.keys() <= {"E_Choke"}:
-            cols = dd_c.flow_circ_df_name
-            # GV = dd_c.flow_circ_df_name['GV_choke']
-            # GV_position = self.flow.flow_mean[GV]
-            # TODO: ajustar esse zero, pois não é zero
-            DP = self.flow.flow_mean[cols["P4"]] - 0
-            self.flow.flow_mean["DP[bar]"] = DP
-
-        return self
+        try:
+            dtg = dtgg_ID.groupby("Marco").get_group(marco)
+            return dtg
+        except Exception:
+            raise Exception(
+                f"Marco {marco} do extrator {ID} no teste {teste} inexistente"
+            )
 
     def get_prop(self, dir):
-        """Obtem as propriedades da emulsao"""
+        """Obtem as propriedades da emulsao e cria a instância tableprop"""
 
-        dir_mass = dir + "/massa_especifica.xlsx"
-        dir_visc = dir + "/viscosidade.xlsx"
+        dir_mass = join(dir, "pb_data\\massa_especifica.xlsx")
+        dir_visc = join(dir, "pb_data\\viscosidade.xlsx")
         # dir_tens = dir + "/tensaointerfacial.xlsx"
 
         emulsion = Fluid2(
@@ -348,7 +366,12 @@ class Import_flow_DSD2:
     #
     def preparaDados(self):
         """Seleciona em um só DataFrame, todas as informações necessárias
-        para a solução do BP"""
+        para a solução do BP
+
+        Returns:
+            instância dados: dados armazena todas as informações necessárias
+            para solucionar o BP
+        """
         cols_ext = dd_c.flow_ext_df_name
         cols_int = dd_c.flow_circ_df_name
         Nemul = cols_ext["numero_emulsao"]
@@ -363,7 +386,11 @@ class Import_flow_DSD2:
         self.dados = None
         self.dados = self.flow.flow_ext[[Nemul, Nesc, ch2o, marco, GV]]
         self.dados = pd.concat(
-            [self.dados, self.flow.flow_mean[[T, dens, Vaz, "DP[bar]"]]], axis=1
+            [
+                self.dados,
+                self.flow.flow_mean[[T, dens, Vaz, "dPGV-ANM [Pa]", "Re", "K"]],
+            ],
+            axis=1,
         )
 
         # Propriedades do fluido
@@ -447,7 +474,28 @@ class Import_flow_DSD2:
         if a:
             self.DTG = DTG
 
-    # def calc_N(self):
+    def get_D_caracteristico(self, dtg, d, dff=[4, 3]):
+        return (
+            (dtg["freq_n"] * d ** dff[0]).sum() / (dtg["freq_n"] * d ** dff[1]).sum()
+        ) ** (1 / (dff[0] - dff[1]))
+
+    def get_Dx(self, dtg, d, base="num", dff=90):
+        """_summary_
+
+        Args:
+            dtg (_type_): _description_
+            d (_type_): _description_
+            base (str, optional): num ou vol. Defaults to 'freq_n'.
+            dff (int, optional): _description_. Defaults to 90.
+
+        Returns:
+            _type_: _description_
+        """
+        if base == "num":
+            dtg["acum_n"] = dtg["freq_n"].cumsum()
+            return interp(dff, dtg["acum_n"], d)
+        elif base == "vol":
+            return interp(dff, dtg["acum_v"], d)
 
 
 class DTG_experiment:
