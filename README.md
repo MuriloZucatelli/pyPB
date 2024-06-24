@@ -1,29 +1,23 @@
-# Python support for CFD
+# General
+This code is part of a master's degree work developed at the Universidade Federal do Espírito Santo, at the Oil and Gas Flow and Measurement Center (NEMOG). 
+Its objective is to solve the population balance equations to predict the development of the droplet size distribution in an emulsion
+
+# Python support for PBM
    
-This is a collection of Python modules for routine CFD calculation 
+This is a collection of Python modules for routine population balance equation calculation 
 
- * Colebrook-White friction factor check with single phase pipe
- * Calculation of turbulence intensities for inlet BC specification
- * Wheeler and PD moment inversion algorithms
- * Method of classes method
-
-## General
-
-### Pressure drop
-
-Simple pressure drop calculation based on Colebrook-White. Tested with efunda calculator.
-
-## Turbulence
-
-### Turbulent BC
+ * Method of classes using constant mesh grid (Hidy and Brock 1970)
+ * Method of classes using geometric mesh grid (Kumar and Ramkrishna 1996)
+ * Method os moments (under construction)
 
 ## Population balance modelling
-### Methods of moments
-#### Wheeler's moment inversion
+This code includes a series of:
+   * Breakup models
+   * Coalescence models
+   * Droplet distribution models at breakage
+   * Initial droplet distribution models
+   * Multiparametric numerical optimization routines
+   * Multiobjective numerical optimization routines
+   * Modules for post-processing results
 
-Also known as Modified Chebyshev algorithm (Gautschi 2004). Obtains a set of weights and abcissas from the set of moments.
-
-#### Realizability check
-Checks whether Hadamard matrices have non-negative determinants
-
-
+Murilo Zucatelli
