@@ -5,6 +5,8 @@
 *.pgf
 *.pickle
 *.vscode
+*.xlsx
+*.mpx
 !scripts/pbe/moc/results/*.pickle
 pbe/validationData/orifice/results/histograms/*
 pbe/validationData/orifice/results/*.pdf
@@ -17,3 +19,5 @@ versions
 *.venvpbe
 *.venvnote
 *venvnote
+cases/murilo/solutions/optimizations/Output_SHGO_Simplicial_11-05-2024.txt
+*.mpx.bak

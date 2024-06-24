@@ -429,3 +429,7 @@ def DTGs_plot(data, runs, name, dir, save=False):
                 pad_inches=0.05,
             )
         plt.close()
+
+
+def doe_mp_plot():
+    pass

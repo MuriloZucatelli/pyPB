@@ -38,7 +38,7 @@ Case setup based on:
     Teste com mesma malha utilizada pelo bettersize
 """
 
-grids = [10]  # Número de classes utilizadas na discretização
+grids = [100]  # Número de classes utilizadas na discretização
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 v0 = 7.87011e-05 / 1e9
 dv0 = 2.65025e-05
@@ -107,8 +107,8 @@ for g in grids:
 vmax = xi[-1]  # Max volume
 v0 = xi[-1]  # Initial volume
 totals = dict((n, sol[n].total_numbers) for n in grids)
-volume = dict((n, sol[n].total_volume) for n in grids)
-
+volume = dict((n, sol[n].phase_fraction) for n in grids)
+initialphi = dict((n, sol[n].initial_phase_fraction) for n in grids)
 
 def total_numbers():
     plt_config2(relative_fig_width=0.7)

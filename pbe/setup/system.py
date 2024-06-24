@@ -58,7 +58,7 @@ class ContinuosPhase(Fluid):
         """
         super(ContinuosPhase, self).__init__(name, rho, mu)
         self.epsilon = epsilon
-        self.nu = rho / mu
+        self.nu = mu / rho
 
 
 class DispersePhase(Fluid):
@@ -101,9 +101,13 @@ class Domain:
         tres: float = None,
         V: float = None,
         M: float = None,
+        xi: float = None,
+        dxi: float = None,
         D: float = None,
         Nstar: float = None,
         w: float = None,
+        A: float = None,
+        Q: float = None,
     ) -> None:
         """domainProperties
          description: is a dictionary with properties of the computational
@@ -116,14 +120,20 @@ class Domain:
             Nstar (float, optional): Impeler revolutions per second, sec-1. Defaults to None.
             w (float): Width of channel (Mitre)
             U (float): Possible fluid velocity
+            A float: Valve opening %
+            Q (float): flow rate [m³/s]
         """
         self.theta = theta
         self.tres = tres
         self.V = V
         self.M = M
+        self.xi = xi
+        self.dxi = dxi
         self.D = D
         self.Nstar = Nstar
         self.w = w
+        self.A = A
+        self.Q = Q
 
 
 class BoundaryInitial:

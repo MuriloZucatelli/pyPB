@@ -175,7 +175,7 @@ class coalescenceModels:
         coli_freq = Cc * sec_area * u_r
 
         A = 0.6e-20  # Joules
-        hf = A * deq / (16 * pi * self.dp.sigma)  # TODO Revisar
+        hf = (A * deq / (16 * pi * self.dp.sigma)) ** (1 / 3)  # TODO Revisar
 
         # Models for coalescence eficience
         # depends on the type of droplet interface

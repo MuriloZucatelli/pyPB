@@ -37,7 +37,7 @@ Comparative between Hidy and Ramkrishna
     for our kernels.
 
 """
-
+save = False
 grids = [10, 50]  # Número de classes utilizadas na discretização
 time = arange(0.0, 100.0, 0.01)  # Tempo e passo
 v0 = 7.87011e-05 / 1e9
@@ -83,7 +83,7 @@ for g in grids:
         xi=xi,
         n0=n0_init2,
         # N0=N0,
-        beta=lambda x, y: 1.0 / y,  # DDSD
+        beta=lambda x, y, i: 1.0 / y,  # DDSD
         gamma=lambda x: x**2,  # breakage rate
     )
 
@@ -109,7 +109,7 @@ vmax = xi[-1]  # Max volume
 v0 = xi[-1]  # Initial volume
 totals_ramk = dict((n, sol_ramk[n].total_numbers) for n in grids)
 totals_hidy = dict((n, sol_hidy[n].total_numbers) for n in grids)
-volume = dict((n, sol_ramk[n].total_volume) for n in grids)
+volume = dict((n, sol_ramk[n].phase_fraction) for n in grids)
 
 
 def total_numbers():
@@ -157,12 +157,13 @@ def total_numbers():
     y_formatter = ticker.ScalarFormatter(useOffset=False)
     y_formatter.set_scientific(False)
     # ax.yaxis.set_major_formatter(y_formatter)
-    fig.savefig(
-        path.join(dir, "ziff_N.pdf"),
-        backend="pgf",
-        bbox_inches="tight",
-        pad_inches=0.05,
-    )
+    if save:
+        fig.savefig(
+            path.join(dir, "ziff_N.pdf"),
+            backend="pgf",
+            bbox_inches="tight",
+            pad_inches=0.05,
+        )
     return fig
 
 
@@ -216,12 +217,13 @@ def densidade_n():
     # ax.set_ylabel("Number density function")
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
-    fig.savefig(
-        path.join(dir, "ziff_n_x.pdf"),
-        backend="pgf",
-        bbox_inches="tight",
-        pad_inches=0.05,
-    )
+    if save:
+        fig.savefig(
+            path.join(dir, "ziff_n_x.pdf"),
+            backend="pgf",
+            bbox_inches="tight",
+            pad_inches=0.05,
+        )
     plt.show()
 
 
@@ -290,7 +292,8 @@ def densidade_n_t():
     ax.text(
         0.20,
         0.87,
-        r"N/N0 Ramk. $\approx$ " + "{:.0f}".format(totals_ramk[n][-1] / totals_ramk[n][0]),
+        r"N/N0 Ramk. $\approx$ "
+        + "{:.0f}".format(totals_ramk[n][-1] / totals_ramk[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
@@ -300,7 +303,8 @@ def densidade_n_t():
     ax.text(
         0.16,
         0.35,
-        r"N/N0 Ramk. $\approx$ " + "{:.0f}".format(totals_ramk[n][loct2] / totals_ramk[n][0]),
+        r"N/N0 Ramk. $\approx$ "
+        + "{:.0f}".format(totals_ramk[n][loct2] / totals_ramk[n][0]),
         fontsize=11,
         horizontalalignment="center",
         verticalalignment="center",
@@ -322,17 +326,18 @@ def densidade_n_t():
     # ax.set_ylabel("Number density function")
     ax.set_ylabel("Densidade numérica [-]")
     ax.grid()
-    fig.savefig(
-        path.join(dir, "ziff_n_x_t.pdf"),
-        backend="pgf",
-        bbox_inches="tight",
-        pad_inches=0.05,
-    )
+    if save:
+        fig.savefig(
+            path.join(dir, "ziff_n_x_t.pdf"),
+            backend="pgf",
+            bbox_inches="tight",
+            pad_inches=0.05,
+        )
     plt.show()
 
 
 # call plots
 fig = total_numbers()
 fig = densidade_n()
-#fig = densidade_n_t()
+# fig = densidade_n_t()
 plt.show()
