@@ -1,9 +1,8 @@
 """
-    Função para resolver utilizando os modelos C&T
-    com constantes originais e do Liao ou outro autor
+    Função para resolver utilizando o modelo do mitre apenas de Coalescencia
 
     Returns:
-        murilo_C&T_basico_{date}.plicke: _description_
+        {date}.plicke: 
 """
 
 from numpy import arange, abs, array, pi, set_printoptions, diff
@@ -35,10 +34,12 @@ set_printoptions(precision=4)
 
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
-pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB_completo"))
-pasta_out = "solutions\\basico"
+pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
+pasta_out = "solutions\\Mitre_Coalescence"
+VALVULA = "MV02"
+X_COMPARE = ["E_Choke"]  # ["E_ANM", "E_FlowLine"]
 testes_all = {
-    88: {2, 3},
+    88: {2},
     90: {2, 3},
     91: {2, 3},
     92: {2, 3},
@@ -77,115 +78,136 @@ testes_all = {
     125: {2, 3},
     126: {2, 3},
     127: {2, 3},
-    128: {2, 3},
+    128: {3},
 }
 
-#
-# CONSTANTES DE MODELO
-#
-C0_original = [0.4, 0.08, 2.8e-6, 1.83e9]
-C0_liao = [0.00481, 0.08, 2.8e-6, 1.83e9]
-C_name = ["Cb", "Cepsilon", "Cc", "Ce"]  # ordem das constantes
-
-#
-# DEFINIÇÃO DOS MODELOS
-#
-Cmodel = {
-    "breakup": "coulaloglou",
-    "coalescence": "coulaloglou",
-    "DDSD": "coulaloglou",
-    "varsigma": 2.0,
-}
-
-#
-# DEFINIÇÃO DOS PARÂMETROS DE SIMULAÇÃO
-#
-CT_liao = (C0_liao, C_name, Cmodel)
-CT_original = (C0_original, C_name, Cmodel)
-
+# Args são os parâmetros para resolver a PBE
+# testes, objetive, C0, Cname, model, ts
+# varsigma: number of droplets from breakup
 args = [
     (
         testes_all,
-        "Calcular o epsilon para cada teste",
-        [9.1609e-01, 3.6968e02, 1.3237e-03, 2.6200e9],
-        C_name,
-        Cmodel,
-        10,
+        "Modelo de coalescencia do Mitre",
+        [1.0 / 1e2],
+        ["Cc"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_rigid_interface",
+            "DDSD": None,
+            "varsigma": 0.0,  # S1: 26.0 ± 0.9. S3: 32.7 ± 16.8
+        },
+        100,
+        5,
+        VALVULA,
     ),
-    (testes_all, "Constantes de C&T", *CT_original),
-    (testes_all, "Constantes de C&T do Liao", *CT_liao),
     (
         testes_all,
-        "Constantes de C&T otimizadas",
-        [3.6, 1.4e3, 1.8e-4, 1.4e10],
-        C_name,
-        Cmodel,
-    ),  # 22-05-2024
-    (testes_all, "C&T Liao 5 ts", *CT_liao, 5),  # 4
-    (testes_all, "C&T Liao 10 ts", *CT_liao, 10),
-    (testes_all, "C&T Liao 20 ts", *CT_liao, 20),
-    (testes_all, "C&T Liao 40 ts", *CT_liao, 40),
-    (testes_all, "C&T Liao 50 ts", *CT_liao, 50),
-    (testes_all, "C&T Liao 60 ts", *CT_liao, 60),
-    (testes_all, "C&T Liao 100 ts", *CT_liao, 100),
-    (testes_all, "C&T Liao 150 ts", *CT_liao, 150),  # 11
-    (testes_all, "C&T Liao_0.1D", *CT_liao, 100, 0.1),  # 12
-    (testes_all, "C&T Liao_0.5D", *CT_liao, 100, 0.5),
-    (testes_all, "C&T Liao_1D", *CT_liao, 100, 1),
-    (testes_all, "C&T Liao_2D", *CT_liao, 100, 2),
-    (testes_all, "C&T Liao_2.4D", *CT_liao, 100, 2.4),  # 16
-    (testes_all, "C&T Liao_3D", *CT_liao, 100, 3),
-    (testes_all, "C&T Liao_4D", *CT_liao, 100, 4),
-    (testes_all, "C&T Liao_5D", *CT_liao, 100, 5),
-    (testes_all, "C&T Liao_6D", *CT_liao, 100, 6),
-    (testes_all, "C&T Liao_7D", *CT_liao, 100, 7),  # 21
-    (testes_all, "C&T Liao_8D", *CT_liao, 100, 8),  # 22
+        "Modelos do Mitre com frequencia não constante",
+        [0.90 / 1e2, 1 / 1e2],
+        ["Cc", "Ce"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_partmobile_interface",
+            "DDSD": None,
+            "varsigma": 0.0,
+        },
+        100,
+        5,
+        VALVULA,
+    ),
+    (
+        testes_all,
+        "Modelos do Mitre com frequencia de quebra constante",
+        [1.88 / 1e2],  # S3: [1.88 ± 0.06, 1.08 ± 0.07] . 10e-2
+        ["Cc"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_rigid_interface",
+            "DDSD": None,
+            "varsigma": 0.0,
+        },
+        100,
+        5,
+        VALVULA,
+    ),
 ]
 
-# 22-05-2024: Otimização de Sobol, média dos erros menores q 8%
+# mitre_CEM = (
+#     [0.90 / 1e2, 1 / 1e2, 0.81 / 1e2],
+#     ["Cc", "Ce", "Cb"],  # ordem das constantes
+#     {
+#         "breakup": "mitre_modified",
+#         "coalescence": "mitre_partmobile_interface",
+#         "DDSD": "mitre",
+#         "varsigma": 31.2,
+#     },
+# )
+# # Teste de convergencia de malha.
+# args2 = [
+#     (testes_all, "Mitre_CEM 5ts", *mitre_CEM, 5),  # 3
+#     (testes_all, "Mitre_CEM 10ts", *mitre_CEM, 10),
+#     (testes_all, "Mitre_CEM 20ts", *mitre_CEM, 20),
+#     (testes_all, "Mitre_CEM 30ts", *mitre_CEM, 30),
+#     (testes_all, "Mitre_CEM 50ts", *mitre_CEM, 50),
+#     (testes_all, "Mitre_CEM 70ts", *mitre_CEM, 70),
+#     (testes_all, "Mitre_CEM 100ts", *mitre_CEM, 100),
+#     (testes_all, "Mitre_CEM 150ts", *mitre_CEM, 150),  # 10
+#     (testes_all, "Mitre_CEM 0.1D", *mitre_CEM, 100, 0.1),  # 11
+#     (testes_all, "Mitre_CEM 0.5D", *mitre_CEM, 100, 0.5),
+#     (testes_all, "Mitre_CEM 1D", *mitre_CEM, 100, 1),
+#     (testes_all, "Mitre_CEM 2D", *mitre_CEM, 100, 2),
+#     (testes_all, "Mitre_CEM 2.4D", *mitre_CEM, 100, 2.4),  # 15
+#     (testes_all, "Mitre_CEM 3D", *mitre_CEM, 100, 3),
+#     (testes_all, "Mitre_CEM 4D", *mitre_CEM, 100, 4),
+#     (testes_all, "Mitre_CEM 5D", *mitre_CEM, 100, 5),
+#     (testes_all, "Mitre_CEM 6D", *mitre_CEM, 100, 6),
+#     (testes_all, "Mitre_CEM 7D", *mitre_CEM, 100, 7),  # 20
+#     (testes_all, "Mitre_CEM 8D", *mitre_CEM, 100, 8),  # 21
+#     (testes_all, "Mitre_CEM 10D", *mitre_CEM, 100, 10),  # 22
+#     (testes_all, "Mitre_CEM 15D", *mitre_CEM, 100, 15),  # 23
+# ]
+
+# args = [*args, *args2]
 
 sols = {
-    "sol_C&T_basico": 0,
-    "sol_C&T_original": 1,
-    "sol_C&T_liao": 2,
-    "sol_C&T_murilo": 3,
+    f"sol_Mitre_{VALVULA}_C_CCE_S1": 0,
+    f"sol_Mitre_{VALVULA}_C_CEM_S1": 1,
+    f"sol_Mitre_{VALVULA}_C_CCE_S3": 2,
 }
-# sols = {
-#     "sol_C&T_liao_5ts": 4,
-#     "sol_C&T_liao_10ts": 5,
-#     "sol_C&T_liao_20ts": 6,
-#     "sol_C&T_liao_40ts": 7,
-#     "sol_C&T_liao_50ts": 8,
-#     "sol_C&T_liao_60ts": 9,
-#     "sol_C&T_liao_100ts": 10,
-#     "sol_C&T_liao_150ts": 11,
-#     "sol_C&T_liao_0.1D": 12,
-#     "sol_C&T_liao_0.5D": 13,
-#     "sol_C&T_liao_1D": 14,
-#     "sol_C&T_liao_2D": 15,
-#     "sol_C&T_liao_2.4D": 16,
-#     "sol_C&T_liao_3D": 17,
-#     "sol_C&T_liao_4D": 18,
-#     "sol_C&T_liao_5D": 19,
-#     "sol_C&T_liao_6D": 20,
-#     "sol_C&T_liao_7D": 21,
-#     "sol_C&T_liao_8D": 22,
-# }
 
-x_compare = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
+# sols = {
+#     "sol_Mitre_CEM_5ts": 3,
+#     "sol_Mitre_CEM_10ts": 4,
+#     "sol_Mitre_CEM_20ts": 5,
+#     "sol_Mitre_CEM_40ts": 6,
+#     "sol_Mitre_CEM_50ts": 7,
+#     "sol_Mitre_CEM_70ts": 8,
+#     "sol_Mitre_CEM_100ts": 9,
+#     "sol_Mitre_CEM_150ts": 10,
+#     "sol_Mitre_CEM_0.1D": 11,
+#     "sol_Mitre_CEM_0.5D": 12,
+#     "sol_Mitre_CEM_1D": 13,
+#     "sol_Mitre_CEM_2D": 14,
+#     "sol_Mitre_CEM_2.4D": 15,
+#     "sol_Mitre_CEM_3D": 16,
+#     "sol_Mitre_CEM_4D": 17,
+#     "sol_Mitre_CEM_5D": 18,
+#     "sol_Mitre_CEM_6D": 19,
+#     "sol_Mitre_CEM_7D": 20,
+#     "sol_Mitre_CEM_8D": 21,
+#     "sol_Mitre_CEM_10D": 22,
+#     "sol_Mitre_CEM_15D": 23}
 
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=["E_ANM", "E_FlowLine"])
-experiments.select_DTG(X=x_compare)
-
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
-# ID vem de:
-# experiments.compares['E_ANM'][0] ou [1], 0: antes, [1]: depois
-# ID = experiments.compares['E_ANM'][0] ou experiments.compares['E_ANM'][1]
 # experiments.get_DTG(teste=90, marco=3, ID=3)
+# ID vem de:
+# ID = experiments.compares['E_ANM'][0] ou experiments.compares['E_ANM'][1]
+# [0]: antes, [1]: depois
 
 
 # Importa propriedades
@@ -228,13 +250,14 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions
 
 
 # Roda a simulação
-def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5):
+def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5, dp_name="MV01"):
     i = 0
     sol = dict()
     sol["experiments"] = experiments
@@ -243,7 +266,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
     sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares[x_compare[0]]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -257,6 +280,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 "exp": exp,
                 "M": M,
                 "mp": Cname,
+                "dp_name": dp_name,
             }
             mp = {i: j for i, j in zip(Cname, C0)}
             sol[i]["pbe_sol"] = PB_solve(

@@ -1,8 +1,8 @@
 """
-    Função para resolver utilizando o modelo do mitre apenas de Coalescencia
+    Função para resolver utilizando os modelos do mitre com quebra binária
 
     Returns:
-        {date}.plicke: 
+        murilo_mitre_binario{date}.plicke: _description_
 """
 
 from numpy import arange, abs, array, pi, set_printoptions, diff
@@ -34,10 +34,13 @@ set_printoptions(precision=4)
 
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
-pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB_completo"))
-pasta_out = "solutions\\Mitre_Coalescence"
+pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
+pasta_out = "solutions\\MitreBinario"
+VALVULA = "MV02"
+X_COMPARE = ["E_Choke"]  # ["E_ANM", "E_FlowLine"]
+
 testes_all = {
-    88: {2, 3},
+    88: {2},
     90: {2, 3},
     91: {2, 3},
     92: {2, 3},
@@ -76,7 +79,7 @@ testes_all = {
     125: {2, 3},
     126: {2, 3},
     127: {2, 3},
-    128: {2, 3},
+    128: {3},
 }
 
 # Args são os parâmetros para resolver a PBE
@@ -85,118 +88,125 @@ testes_all = {
 args = [
     (
         testes_all,
-        "Modelo de coalescencia do Mitre",
-        [1.0 / 1e2],
-        ["Cc"],  # ordem das constantes
+        "Mitre CCE e quebra binária",  # com frequencia de coalescencia constante
+        [1.0 / 1e2, 0.98 / 1e2],
+        ["Cc", "Cb"],  # ordem das constantes
         {
-            "breakup": None,
+            "breakup": "mitre_modified",
             "coalescence": "mitre_rigid_interface",
-            "DDSD": None,
-            "varsigma": 0.0,  # S1: 26.0 ± 0.9. S3: 32.7 ± 16.8
+            "DDSD": "mitre",
+            "varsigma": 2,  # S1: 26.0 ± 0.9. S3: 32.7 ± 16.8
         },
         100,
+        5,
+        VALVULA,
     ),
     (
         testes_all,
-        "Modelos do Mitre com frequencia não constante",
-        [0.90 / 1e2, 1 / 1e2],
-        ["Cc", "Ce"],  # ordem das constantes
+        "Mitre CEM e quebra binária",
+        [0.90 / 1e2, 1 / 1e2, 0.81 / 1e2],
+        ["Cc", "Ce", "Cb"],  # ordem das constantes
         {
-            "breakup": None,
+            "breakup": "mitre_modified",
             "coalescence": "mitre_partmobile_interface",
-            "DDSD": None,
-            "varsigma": 0.0,
+            "DDSD": "mitre",
+            "varsigma": 2,
         },
         100,
+        5,
+        VALVULA,
     ),
     (
         testes_all,
-        "Modelos do Mitre com frequencia de quebra constante",
-        [1.88 / 1e2],  # S3: [1.88 ± 0.06, 1.08 ± 0.07] . 10e-2
-        ["Cc"],  # ordem das constantes
+        "Mitre CCE e quebra binária",  # com frequencia de coalescencia constante
+        [1.88 / 1e2, 1.08 / 1e2],  # S3: [1.88 ± 0.06, 1.08 ± 0.07] . 10e-2
+        ["Cc", "Cb"],  # ordem das constantes
         {
-            "breakup": None,
+            "breakup": "mitre_modified",
             "coalescence": "mitre_rigid_interface",
-            "DDSD": None,
-            "varsigma": 0.0,
+            "DDSD": "mitre",
+            "varsigma": 2,
         },
         100,
+        5,
+        VALVULA,
     ),
 ]
 
-# mitre_CEM = (
-#     [0.90 / 1e2, 1 / 1e2, 0.81 / 1e2],
-#     ["Cc", "Ce", "Cb"],  # ordem das constantes
-#     {
-#         "breakup": "mitre_modified",
-#         "coalescence": "mitre_partmobile_interface",
-#         "DDSD": "mitre",
-#         "varsigma": 31.2,
-#     },
-# )
-# # Teste de convergencia de malha.
-# args2 = [
-#     (testes_all, "Mitre_CEM 5ts", *mitre_CEM, 5),  # 3
-#     (testes_all, "Mitre_CEM 10ts", *mitre_CEM, 10),
-#     (testes_all, "Mitre_CEM 20ts", *mitre_CEM, 20),
-#     (testes_all, "Mitre_CEM 30ts", *mitre_CEM, 30),
-#     (testes_all, "Mitre_CEM 50ts", *mitre_CEM, 50),
-#     (testes_all, "Mitre_CEM 70ts", *mitre_CEM, 70),
-#     (testes_all, "Mitre_CEM 100ts", *mitre_CEM, 100),
-#     (testes_all, "Mitre_CEM 150ts", *mitre_CEM, 150),  # 10
-#     (testes_all, "Mitre_CEM 0.1D", *mitre_CEM, 100, 0.1),  # 11
-#     (testes_all, "Mitre_CEM 0.5D", *mitre_CEM, 100, 0.5),
-#     (testes_all, "Mitre_CEM 1D", *mitre_CEM, 100, 1),
-#     (testes_all, "Mitre_CEM 2D", *mitre_CEM, 100, 2),
-#     (testes_all, "Mitre_CEM 2.4D", *mitre_CEM, 100, 2.4),  # 15
-#     (testes_all, "Mitre_CEM 3D", *mitre_CEM, 100, 3),
-#     (testes_all, "Mitre_CEM 4D", *mitre_CEM, 100, 4),
-#     (testes_all, "Mitre_CEM 5D", *mitre_CEM, 100, 5),
-#     (testes_all, "Mitre_CEM 6D", *mitre_CEM, 100, 6),
-#     (testes_all, "Mitre_CEM 7D", *mitre_CEM, 100, 7),  # 20
-#     (testes_all, "Mitre_CEM 8D", *mitre_CEM, 100, 8),  # 21
-#     (testes_all, "Mitre_CEM 10D", *mitre_CEM, 100, 10),  # 22
-#     (testes_all, "Mitre_CEM 15D", *mitre_CEM, 100, 15),  # 23
-# ]
+mitre_CEM = (
+    [0.90 / 1e2, 1 / 1e2, 0.81 / 1e2],
+    ["Cc", "Ce", "Cb"],  # ordem das constantes
+    {
+        "breakup": "mitre_modified",
+        "coalescence": "mitre_partmobile_interface",
+        "DDSD": "mitre",
+        "varsigma": 2,
+    },
+)
+# Teste de convergencia de malha.
+args2 = [
+    (testes_all, "Mitre_CEM_bi 5ts", *mitre_CEM, 5, 5, VALVULA),  # 3
+    (testes_all, "Mitre_CEM_bi 10ts", *mitre_CEM, 10, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 20ts", *mitre_CEM, 20, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 30ts", *mitre_CEM, 30, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 50ts", *mitre_CEM, 50, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 70ts", *mitre_CEM, 70, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 100ts", *mitre_CEM, 100, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 150ts", *mitre_CEM, 150, 5, VALVULA),  # 10
+    (testes_all, "Mitre_CEM_bi 0.1D", *mitre_CEM, 100, 0.1, VALVULA),  # 11
+    (testes_all, "Mitre_CEM_bi 0.5D", *mitre_CEM, 100, 0.5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 1D", *mitre_CEM, 100, 1, VALVULA),
+    (testes_all, "Mitre_CEM_bi 2D", *mitre_CEM, 100, 2, VALVULA),
+    (testes_all, "Mitre_CEM_bi 2.4D", *mitre_CEM, 100, 2.4, VALVULA),  # 15
+    (testes_all, "Mitre_CEM_bi 3D", *mitre_CEM, 100, 3, VALVULA),
+    (testes_all, "Mitre_CEM_bi 4D", *mitre_CEM, 100, 4, VALVULA),
+    (testes_all, "Mitre_CEM_bi 5D", *mitre_CEM, 100, 5, VALVULA),
+    (testes_all, "Mitre_CEM_bi 6D", *mitre_CEM, 100, 6, VALVULA),
+    (testes_all, "Mitre_CEM_bi 7D", *mitre_CEM, 100, 7, VALVULA),  # 20
+    (testes_all, "Mitre_CEM_bi 8D", *mitre_CEM, 100, 8, VALVULA),  # 21
+    (testes_all, "Mitre_CEM_bi 10D", *mitre_CEM, 100, 10, VALVULA),  # 22
+    (testes_all, "Mitre_CEM_bi 15D", *mitre_CEM, 100, 15, VALVULA),  # 23
+]
 
-# args = [*args, *args2]
+args = [*args, *args2]
 
-sols = {
-    "sol_Mitre_C_CCE_S1": 0,
-    "sol_Mitre_C_CEM_S1": 1,
-    "sol_Mitre_C_CCE_S3": 2,
+sols1 = {
+    f"sol_Mitre_{VALVULA}_CCE_binario_S1": 0,
+    f"sol_Mitre_{VALVULA}_CEM_binario_S1": 1,
+    f"sol_Mitre_{VALVULA}_CCE_binario_S3": 2,
 }
 
-# sols = {
-#     "sol_Mitre_CEM_5ts": 3,
-#     "sol_Mitre_CEM_10ts": 4,
-#     "sol_Mitre_CEM_20ts": 5,
-#     "sol_Mitre_CEM_40ts": 6,
-#     "sol_Mitre_CEM_50ts": 7,
-#     "sol_Mitre_CEM_70ts": 8,
-#     "sol_Mitre_CEM_100ts": 9,
-#     "sol_Mitre_CEM_150ts": 10,
-#     "sol_Mitre_CEM_0.1D": 11,
-#     "sol_Mitre_CEM_0.5D": 12,
-#     "sol_Mitre_CEM_1D": 13,
-#     "sol_Mitre_CEM_2D": 14,
-#     "sol_Mitre_CEM_2.4D": 15,
-#     "sol_Mitre_CEM_3D": 16,
-#     "sol_Mitre_CEM_4D": 17,
-#     "sol_Mitre_CEM_5D": 18,
-#     "sol_Mitre_CEM_6D": 19,
-#     "sol_Mitre_CEM_7D": 20,
-#     "sol_Mitre_CEM_8D": 21,
-#     "sol_Mitre_CEM_10D": 22,
-#     "sol_Mitre_CEM_15D": 23}
+sols2 = {
+    f"sol_Mitre_{VALVULA}_CEM_binario_5ts": 3,
+    f"sol_Mitre_{VALVULA}_CEM_binario_10ts": 4,
+    f"sol_Mitre_{VALVULA}_CEM_binario_20ts": 5,
+    f"sol_Mitre_{VALVULA}_CEM_binario_40ts": 6,
+    f"sol_Mitre_{VALVULA}_CEM_binario_50ts": 7,
+    f"sol_Mitre_{VALVULA}_CEM_binario_70ts": 8,
+    f"sol_Mitre_{VALVULA}_CEM_binario_100ts": 9,
+    f"sol_Mitre_{VALVULA}_CEM_binario_150ts": 10,
+    f"sol_Mitre_{VALVULA}_CEM_binario_0.1D": 11,
+    f"sol_Mitre_{VALVULA}_CEM_binario_0.5D": 12,
+    f"sol_Mitre_{VALVULA}_CEM_binario_1D": 13,
+    f"sol_Mitre_{VALVULA}_CEM_binario_2D": 14,
+    f"sol_Mitre_{VALVULA}_CEM_binario_2.4D": 15,
+    f"sol_Mitre_{VALVULA}_CEM_binario_3D": 16,
+    f"sol_Mitre_{VALVULA}_CEM_binario_4D": 17,
+    f"sol_Mitre_{VALVULA}_CEM_binario_5D": 18,
+    f"sol_Mitre_{VALVULA}_CEM_binario_6D": 19,
+    f"sol_Mitre_{VALVULA}_CEM_binario_7D": 20,
+    f"sol_Mitre_{VALVULA}_CEM_binario_8D": 21,
+    f"sol_Mitre_{VALVULA}_CEM_binario_10D": 22,
+    f"sol_Mitre_{VALVULA}_CEM_binario_15D": 23,
+}
 
-x_compare = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
+sols = {**sols1, **sols2}
 
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=x_compare)
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
 # experiments.get_DTG(teste=90, marco=3, ID=3)
 # ID vem de:
@@ -244,13 +254,14 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions
 
 
 # Roda a simulação
-def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5):
+def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5, dp_name="MV01"):
     i = 0
     sol = dict()
     sol["experiments"] = experiments
@@ -259,7 +270,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
     sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares[x_compare[0]]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -273,6 +284,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 "exp": exp,
                 "M": M,
                 "mp": Cname,
+                "dp_name": dp_name,
             }
             mp = {i: j for i, j in zip(Cname, C0)}
             sol[i]["pbe_sol"] = PB_solve(
@@ -284,7 +296,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 experiments,
                 model,
                 ts,
-                fator,
+                fator=fator,
             )
             print(sol[i]["pbe_sol"].moc.d43)
             i += 1

@@ -1,5 +1,5 @@
 """
-    Função para resolver sem modelo de quebra e coalescencia
+    Função para resolver utilizando o modelo do mitre apenas de Coalescencia
 
     Returns:
         {date}.plicke: 
@@ -34,8 +34,10 @@ set_printoptions(precision=4)
 
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
-pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB_completo"))
-pasta_out = "solutions\\NoModel"
+pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
+pasta_out = "solutions\\Mitre_Coalescence"
+VALVULA = "MV01"
+X_COMPARE = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
 testes_all = {
     88: {2, 3},
     90: {2, 3},
@@ -82,36 +84,125 @@ testes_all = {
 # Args são os parâmetros para resolver a PBE
 # testes, objetive, C0, Cname, model, ts
 # varsigma: number of droplets from breakup
-noModel = (
-    [],
-    [],  # ordem das constantes
-    {
-        "breakup": None,
-        "coalescence": None,
-        "DDSD": None,
-        "varsigma": 0.0,  # S1: 26.0 ± 0.9. S3: 32.7 ± 16.8
-    },
-)
-
-args1 = [(testes_all, "NoModel 5D", *noModel, 100, 5)]
-# Teste de convergencia de malha.
-args2 = [
-    (testes_all, "NoModel 5D", *noModel, 100, 5),
+args = [
+    (
+        testes_all,
+        "Modelo de coalescencia do Mitre",
+        [1.0 / 1e2],
+        ["Cc"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_rigid_interface",
+            "DDSD": None,
+            "varsigma": 0.0,  # S1: 26.0 ± 0.9. S3: 32.7 ± 16.8
+        },
+        100,
+        5,
+        VALVULA,
+    ),
+    (
+        testes_all,
+        "Modelos do Mitre com frequencia não constante",
+        [0.90 / 1e2, 1 / 1e2],
+        ["Cc", "Ce"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_partmobile_interface",
+            "DDSD": None,
+            "varsigma": 0.0,
+        },
+        100,
+        5,
+        VALVULA,
+    ),
+    (
+        testes_all,
+        "Modelos do Mitre com frequencia de quebra constante",
+        [1.88 / 1e2],  # S3: [1.88 ± 0.06, 1.08 ± 0.07] . 10e-2
+        ["Cc"],  # ordem das constantes
+        {
+            "breakup": None,
+            "coalescence": "mitre_rigid_interface",
+            "DDSD": None,
+            "varsigma": 0.0,
+        },
+        100,
+        5,
+        VALVULA,
+    ),
 ]
 
-args = [*args2]
+# mitre_CEM = (
+#     [0.90 / 1e2, 1 / 1e2, 0.81 / 1e2],
+#     ["Cc", "Ce", "Cb"],  # ordem das constantes
+#     {
+#         "breakup": "mitre_modified",
+#         "coalescence": "mitre_partmobile_interface",
+#         "DDSD": "mitre",
+#         "varsigma": 31.2,
+#     },
+# )
+# # Teste de convergencia de malha.
+# args2 = [
+#     (testes_all, "Mitre_CEM 5ts", *mitre_CEM, 5),  # 3
+#     (testes_all, "Mitre_CEM 10ts", *mitre_CEM, 10),
+#     (testes_all, "Mitre_CEM 20ts", *mitre_CEM, 20),
+#     (testes_all, "Mitre_CEM 30ts", *mitre_CEM, 30),
+#     (testes_all, "Mitre_CEM 50ts", *mitre_CEM, 50),
+#     (testes_all, "Mitre_CEM 70ts", *mitre_CEM, 70),
+#     (testes_all, "Mitre_CEM 100ts", *mitre_CEM, 100),
+#     (testes_all, "Mitre_CEM 150ts", *mitre_CEM, 150),  # 10
+#     (testes_all, "Mitre_CEM 0.1D", *mitre_CEM, 100, 0.1),  # 11
+#     (testes_all, "Mitre_CEM 0.5D", *mitre_CEM, 100, 0.5),
+#     (testes_all, "Mitre_CEM 1D", *mitre_CEM, 100, 1),
+#     (testes_all, "Mitre_CEM 2D", *mitre_CEM, 100, 2),
+#     (testes_all, "Mitre_CEM 2.4D", *mitre_CEM, 100, 2.4),  # 15
+#     (testes_all, "Mitre_CEM 3D", *mitre_CEM, 100, 3),
+#     (testes_all, "Mitre_CEM 4D", *mitre_CEM, 100, 4),
+#     (testes_all, "Mitre_CEM 5D", *mitre_CEM, 100, 5),
+#     (testes_all, "Mitre_CEM 6D", *mitre_CEM, 100, 6),
+#     (testes_all, "Mitre_CEM 7D", *mitre_CEM, 100, 7),  # 20
+#     (testes_all, "Mitre_CEM 8D", *mitre_CEM, 100, 8),  # 21
+#     (testes_all, "Mitre_CEM 10D", *mitre_CEM, 100, 10),  # 22
+#     (testes_all, "Mitre_CEM 15D", *mitre_CEM, 100, 15),  # 23
+# ]
 
+# args = [*args, *args2]
 
 sols = {
-    "sol_NoModel_5D": 0}
+    f"sol_Mitre_{VALVULA}_C_CCE_S1": 0,
+    f"sol_Mitre_{VALVULA}_C_CEM_S1": 1,
+    f"sol_Mitre_{VALVULA}_C_CCE_S3": 2,
+}
 
-x_compare = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
+# sols = {
+#     "sol_Mitre_CEM_5ts": 3,
+#     "sol_Mitre_CEM_10ts": 4,
+#     "sol_Mitre_CEM_20ts": 5,
+#     "sol_Mitre_CEM_40ts": 6,
+#     "sol_Mitre_CEM_50ts": 7,
+#     "sol_Mitre_CEM_70ts": 8,
+#     "sol_Mitre_CEM_100ts": 9,
+#     "sol_Mitre_CEM_150ts": 10,
+#     "sol_Mitre_CEM_0.1D": 11,
+#     "sol_Mitre_CEM_0.5D": 12,
+#     "sol_Mitre_CEM_1D": 13,
+#     "sol_Mitre_CEM_2D": 14,
+#     "sol_Mitre_CEM_2.4D": 15,
+#     "sol_Mitre_CEM_3D": 16,
+#     "sol_Mitre_CEM_4D": 17,
+#     "sol_Mitre_CEM_5D": 18,
+#     "sol_Mitre_CEM_6D": 19,
+#     "sol_Mitre_CEM_7D": 20,
+#     "sol_Mitre_CEM_8D": 21,
+#     "sol_Mitre_CEM_10D": 22,
+#     "sol_Mitre_CEM_15D": 23}
 
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=x_compare)
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
 # experiments.get_DTG(teste=90, marco=3, ID=3)
 # ID vem de:
@@ -159,13 +250,14 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions
 
 
 # Roda a simulação
-def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5):
+def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5, dp_name="MV01"):
     i = 0
     sol = dict()
     sol["experiments"] = experiments
@@ -174,7 +266,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
     sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares[x_compare[0]]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -188,6 +280,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 "exp": exp,
                 "M": M,
                 "mp": Cname,
+                "dp_name": dp_name,
             }
             mp = {i: j for i, j in zip(Cname, C0)}
             sol[i]["pbe_sol"] = PB_solve(
@@ -199,7 +292,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 experiments,
                 model,
                 ts,
-                fator,
+                fator=fator,
             )
             print(sol[i]["pbe_sol"].moc.d43)
             i += 1
