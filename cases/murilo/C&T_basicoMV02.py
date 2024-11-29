@@ -115,16 +115,19 @@ args = [
         Cmodel,
         10,
         5,
-        VALVULA
+        VALVULA,
     ),
-    (testes_all, "Constantes de C&T", *CT_original),
-    (testes_all, "Constantes de C&T do Liao", *CT_liao),
+    (testes_all, "Constantes de C&T", *CT_original, 100, 5, VALVULA),
+    (testes_all, "Constantes de C&T do Liao", *CT_liao, 100, 5, VALVULA),
     (
         testes_all,
         "Constantes de C&T otimizadas",
         [3.6, 1.4e3, 1.8e-4, 1.4e10],
         C_name,
         Cmodel,
+        100,
+        5,
+        VALVULA,
     ),  # 22-05-2024
     (testes_all, "C&T Liao 5 ts", *CT_liao, 5),  # 4
     (testes_all, "C&T Liao 10 ts", *CT_liao, 10),
@@ -151,9 +154,9 @@ args = [
 
 sols = {
     F"sol_C&T_basico_{VALVULA}": 0,
-    #"sol_C&T_original": 1,
-    #"sol_C&T_liao": 2,
-    #"sol_C&T_murilo": 3,
+f"sol_C&T_original_{VALVULA}": 1,
+    f"sol_C&T_liao_{VALVULA}": 2,
+    f"sol_C&T_murilo_{VALVULA}": 3,
 }
 # sols = {
 #     "sol_C&T_liao_5ts": 4,

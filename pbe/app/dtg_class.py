@@ -38,6 +38,7 @@ class DTGSolution:
         varsigma=2.0,
         DDSDmodel="coulaloglou",
         fator=5,
+        dp_name="MV01",
     ):
 
         self.D = 0.02095  # [m] pipe diameter diameter
@@ -58,7 +59,7 @@ class DTGSolution:
 
         self.Q = exp["FT-01[kg/min]"] / (60 * self.cp.rho)
         tres = self.Vdiss / self.Q  # [s] tempo de residência
-        self.cp.epsilon = self.calc_epsilon(exp)
+        self.cp.epsilon = self.calc_epsilon(exp, dp_name=dp_name)
 
         self.time = arange(0.0, tres, tres / timesteps)
         # water solution
@@ -130,14 +131,14 @@ class DTGSolution:
         """
         return self.moc.N[-1] * self.moc.xi / self.dp.phi
 
-    def calc_epsilon(self, exp):
+    def calc_epsilon(self, exp, dp_name):
         """Calcula as propriedades turbulentas
 
         Returns:
             float: epsilon  m2/s3
         """
 
-        return exp["dPGV-ANM [Pa]"] * (self.Q) / (self.cp.rho * self.Vdiss)
+        return exp[f"dP-{dp_name} [Pa]"] * (self.Q) / (self.cp.rho * self.Vdiss)
 
 
 #
@@ -312,7 +313,7 @@ class Import_flow_DSD2:
             for x in xs:
                 dfn = pd.concat([dfn, dtgg.get_group(x)])
         except Exception:
-            print("Erro")
+            print("Erro no select_DTG")
         self.DTG = dfn
 
     def get_DTG(self, teste: int = None, marco: int = None, ID: int = None):
@@ -378,17 +379,20 @@ class Import_flow_DSD2:
         Nesc = cols_ext["numero_escoamento"]
         ch2o = cols_ext["cH20"]
         marco = cols_ext["marco"]
-        GV = cols_ext["GV_ANM"]
+        mv01 = cols_ext["GV_mv01"]
+        mv02 = cols_ext["GV_mv02"]
         T = cols_int["Tlinha"]
         dens = cols_int["densidade"]
         Vaz = cols_int["vazao"]
 
         self.dados = None
-        self.dados = self.flow.flow_ext[[Nemul, Nesc, ch2o, marco, GV]]
+        self.dados = self.flow.flow_ext[[Nemul, Nesc, ch2o, marco, mv01, mv02]]
         self.dados = pd.concat(
             [
                 self.dados,
-                self.flow.flow_mean[[T, dens, Vaz, "dPGV-ANM [Pa]", "Re", "K"]],
+                self.flow.flow_mean[
+                    [T, dens, Vaz, "dP-MV01 [Pa]", "dP-MV02 [Pa]", "Re_MV01", "K_MV01"]
+                ],
             ],
             axis=1,
         )
