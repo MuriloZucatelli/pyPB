@@ -35,9 +35,10 @@ set_printoptions(precision=4)
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
 pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
-pasta_out = "solutions\\MitreOriginalMV01"
+pasta_out = "solutions\\MitreOriginal"
 VALVULA = "MV01"
 X_COMPARE = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
+
 testes_all = {
     88: {2, 3},
     90: {2, 3},
@@ -79,6 +80,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {2, 3},
+    129: {2, 3},
 }
 
 # Args são os parâmetros para resolver a PBE
@@ -253,7 +255,7 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
-        dp_name=sol["dp_name"]
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions

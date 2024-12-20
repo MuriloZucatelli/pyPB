@@ -35,7 +35,7 @@ set_printoptions(precision=4)
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
 pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
-pasta_out = "solutions\\MitreOriginalMV02"
+pasta_out = "solutions\\MitreOriginal"
 VALVULA = "MV02"
 X_COMPARE = ["E_Choke"]  # ["E_ANM", "E_FlowLine"]
 
@@ -80,6 +80,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {3},
+    129: {2, 3},
 }
 
 # Args são os parâmetros para resolver a PBE

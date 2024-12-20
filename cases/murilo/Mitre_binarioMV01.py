@@ -79,6 +79,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {2, 3},
+    129: {2, 3},
 }
 
 # Args são os parâmetros para resolver a PBE
@@ -253,7 +254,7 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
-        dp_name=sol["dp_name"]
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions

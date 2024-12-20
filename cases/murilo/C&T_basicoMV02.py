@@ -81,6 +81,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {3},
+    129: {2, 3},
 }
 
 #
@@ -129,56 +130,56 @@ args = [
         5,
         VALVULA,
     ),  # 22-05-2024
-    (testes_all, "C&T Liao 5 ts", *CT_liao, 5),  # 4
-    (testes_all, "C&T Liao 10 ts", *CT_liao, 10),
-    (testes_all, "C&T Liao 20 ts", *CT_liao, 20),
-    (testes_all, "C&T Liao 40 ts", *CT_liao, 40),
-    (testes_all, "C&T Liao 50 ts", *CT_liao, 50),
-    (testes_all, "C&T Liao 60 ts", *CT_liao, 60),
-    (testes_all, "C&T Liao 100 ts", *CT_liao, 100),
-    (testes_all, "C&T Liao 150 ts", *CT_liao, 150),  # 11
-    (testes_all, "C&T Liao_0.1D", *CT_liao, 100, 0.1),  # 12
-    (testes_all, "C&T Liao_0.5D", *CT_liao, 100, 0.5),
-    (testes_all, "C&T Liao_1D", *CT_liao, 100, 1),
-    (testes_all, "C&T Liao_2D", *CT_liao, 100, 2),
-    (testes_all, "C&T Liao_2.4D", *CT_liao, 100, 2.4),  # 16
-    (testes_all, "C&T Liao_3D", *CT_liao, 100, 3),
-    (testes_all, "C&T Liao_4D", *CT_liao, 100, 4),
-    (testes_all, "C&T Liao_5D", *CT_liao, 100, 5),
-    (testes_all, "C&T Liao_6D", *CT_liao, 100, 6),
-    (testes_all, "C&T Liao_7D", *CT_liao, 100, 7),  # 21
-    (testes_all, "C&T Liao_8D", *CT_liao, 100, 8),  # 22
+    (testes_all, "C&T Liao 5 ts", *CT_liao, 5, 5, VALVULA),  # 4
+    (testes_all, "C&T Liao 10 ts", *CT_liao, 10, 5, VALVULA),
+    (testes_all, "C&T Liao 20 ts", *CT_liao, 20, 5, VALVULA),
+    (testes_all, "C&T Liao 40 ts", *CT_liao, 40, 5, VALVULA),
+    (testes_all, "C&T Liao 50 ts", *CT_liao, 50, 5, VALVULA),
+    (testes_all, "C&T Liao 60 ts", *CT_liao, 60, 5, VALVULA),
+    (testes_all, "C&T Liao 100 ts", *CT_liao, 100, 5, VALVULA),
+    (testes_all, "C&T Liao 150 ts", *CT_liao, 150, 5, VALVULA),  # 11
+    (testes_all, "C&T Liao_0.1D", *CT_liao, 100, 0.1, VALVULA),  # 12
+    (testes_all, "C&T Liao_0.5D", *CT_liao, 100, 0.5, VALVULA),
+    (testes_all, "C&T Liao_1D", *CT_liao, 100, 1, VALVULA),
+    (testes_all, "C&T Liao_2D", *CT_liao, 100, 2, VALVULA),
+    (testes_all, "C&T Liao_2.4D", *CT_liao, 100, 2.4, VALVULA),  # 16
+    (testes_all, "C&T Liao_3D", *CT_liao, 100, 3, VALVULA),
+    (testes_all, "C&T Liao_4D", *CT_liao, 100, 4, VALVULA),
+    (testes_all, "C&T Liao_5D", *CT_liao, 100, 5, VALVULA),
+    (testes_all, "C&T Liao_6D", *CT_liao, 100, 6, VALVULA),
+    (testes_all, "C&T Liao_7D", *CT_liao, 100, 7, VALVULA),  # 21
+    (testes_all, "C&T Liao_8D", *CT_liao, 100, 8, VALVULA),  # 22
 ]
 
 # 22-05-2024: Otimização de Sobol, média dos erros menores q 8%
 
 sols = {
-    F"sol_C&T_basico_{VALVULA}": 0,
-f"sol_C&T_original_{VALVULA}": 1,
+    f"sol_C&T_basico_{VALVULA}": 0,
+    f"sol_C&T_original_{VALVULA}": 1,
     f"sol_C&T_liao_{VALVULA}": 2,
     f"sol_C&T_murilo_{VALVULA}": 3,
 }
-# sols = {
-#     "sol_C&T_liao_5ts": 4,
-#     "sol_C&T_liao_10ts": 5,
-#     "sol_C&T_liao_20ts": 6,
-#     "sol_C&T_liao_40ts": 7,
-#     "sol_C&T_liao_50ts": 8,
-#     "sol_C&T_liao_60ts": 9,
-#     "sol_C&T_liao_100ts": 10,
-#     "sol_C&T_liao_150ts": 11,
-#     "sol_C&T_liao_0.1D": 12,
-#     "sol_C&T_liao_0.5D": 13,
-#     "sol_C&T_liao_1D": 14,
-#     "sol_C&T_liao_2D": 15,
-#     "sol_C&T_liao_2.4D": 16,
-#     "sol_C&T_liao_3D": 17,
-#     "sol_C&T_liao_4D": 18,
-#     "sol_C&T_liao_5D": 19,
-#     "sol_C&T_liao_6D": 20,
-#     "sol_C&T_liao_7D": 21,
-#     "sol_C&T_liao_8D": 22,
-# }
+sols = {
+    f"sol_C&T_liao_{VALVULA}_5ts": 4,
+    f"sol_C&T_liao_{VALVULA}_10ts": 5,
+    f"sol_C&T_liao_{VALVULA}_20ts": 6,
+    f"sol_C&T_liao_{VALVULA}_40ts": 7,
+    f"sol_C&T_liao_{VALVULA}_50ts": 8,
+    f"sol_C&T_liao_{VALVULA}_60ts": 9,
+    f"sol_C&T_liao_{VALVULA}_100ts": 10,
+    f"sol_C&T_liao_{VALVULA}_150ts": 11,
+    f"sol_C&T_liao_{VALVULA}_0.1D": 12,
+    f"sol_C&T_liao_{VALVULA}_0.5D": 13,
+    f"sol_C&T_liao_{VALVULA}_1D": 14,
+    f"sol_C&T_liao_{VALVULA}_2D": 15,
+    f"sol_C&T_liao_{VALVULA}_2.4D": 16,
+    f"sol_C&T_liao_{VALVULA}_3D": 17,
+    f"sol_C&T_liao_{VALVULA}_4D": 18,
+    f"sol_C&T_liao_{VALVULA}_5D": 19,
+    f"sol_C&T_liao_{VALVULA}_6D": 20,
+    f"sol_C&T_liao_{VALVULA}_7D": 21,
+    f"sol_C&T_liao_{VALVULA}_8D": 22,
+}
 
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
