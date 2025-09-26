@@ -22,8 +22,8 @@ def d_max_kolmogorov_length(
     name,
     dir,
     save=False,
-    x="eta [um]",
-    y="ANM_d Dv99 [um]",
+    x="lambdak [um]",
+    y="dv99d MV01 [um]",
     style=None,
     hue=None,
     size=None,
@@ -32,12 +32,12 @@ def d_max_kolmogorov_length(
     Altura = rcParams["figure.figsize"][0]
     fig = plt.figure(figsize=[Altura, Altura])
     ax = fig.gca()
-    ax.set_xlabel(r"Comprimento de Kolmogorov $\eta$ [$\mu$m]")
+    ax.set_xlabel(r"Comprimento de Kolmogorov $\lambda_k$ [$\mu$m]")
     ax.set_ylabel(r"Tamanho da gota $D_{v99}$ [$\mu$m]")
     ax.text(
         0.5,
         0.8,
-        r"Subescala inercial" + "\n" + r"d > $\eta$",
+        r"Subescala inercial" + "\n" + r"d > $\lambda_k$",
         fontsize=10,
         horizontalalignment="center",
         verticalalignment="center",
@@ -46,7 +46,7 @@ def d_max_kolmogorov_length(
     ax.text(
         0.8,
         0.55,
-        r"Subescala viscosa" + "\n" + r"d < $\eta$",
+        r"Subescala viscosa" + "\n" + r"d < $\lambda_k$",
         fontsize=10,
         horizontalalignment="center",
         verticalalignment="center",
@@ -102,6 +102,7 @@ def d_We_Re(
     style=None,
     hue=None,
     size=None,
+    dp_name="MV01",
 ):
     plt_config2(relative_fig_width=0.6)
 
@@ -112,7 +113,7 @@ def d_We_Re(
     ax.text(
         0.5,
         0.8,
-        r"Subescala inercial" + "\n" + r"d > $\eta$",
+        r"Subescala inercial" + "\n" + r"d > $\lambda_k$",
         fontsize=10,
         horizontalalignment="center",
         verticalalignment="center",
@@ -121,7 +122,7 @@ def d_We_Re(
     ax.text(
         0.8,
         0.55,
-        r"Subescala viscosa" + "\n" + r"d < $\eta$",
+        r"Subescala viscosa" + "\n" + r"d < $\lambda_k$",
         fontsize=10,
         horizontalalignment="center",
         verticalalignment="center",
@@ -129,7 +130,7 @@ def d_We_Re(
     )
 
     data["dDWe"] = data["We_pipe"] ** (4 / 5) / data["Re_pipe"]
-    data["We_Re"] = data["ANM_d Dv50 [um]"] / (D * 1e6) * data["We_pipe"] ** (3 / 5)
+    data["We_Re"] = data[f"dv50d {dp_name} [um]"] / (D * 1e6) * data["We_pipe"] ** (3 / 5)
 
     Re = arange(50, 1000, 1)
     We = (0.0674 * Re) ** (5 / 4)

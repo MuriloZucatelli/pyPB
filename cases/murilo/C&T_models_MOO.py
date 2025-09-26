@@ -6,17 +6,16 @@
         murilo_C&T_basico_{date}.plicke: _description_
 """
 
-from numpy import arange, abs, array, pi, set_printoptions, diff, column_stack
+from numpy import arange, array, pi, set_printoptions, diff, column_stack
 
 # from numpy import genfromtxt, zeros_like
+# from os import getcwd
 from sys import path as sph
 from os.path import join, abspath, dirname
-from os import getcwd
 from pandas import read_excel
 from multiprocessing import Pool
 from datetime import date
 import pickle
-import time
 from pymoo.core.problem import (
     ElementwiseEvaluationFunction,
     LoopedElementwiseEvaluation,
@@ -37,8 +36,8 @@ if __name__ == "__main__":
 from pbe.app.dtg_class import (
     DTGSolution,
     Import_flow_DSD2,
-    DTG_experiment,
     get_location,
+    # DTG_experiment,
 )
 
 set_printoptions(precision=4)
@@ -46,7 +45,12 @@ set_printoptions(precision=4)
 
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
-pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB_completo"))
+pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
+pasta_out = "solutions\\MitreMOO"
+
+VALVULA = "MV01"
+X_COMPARE = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
+
 testes_all = {
     88: {2, 3},
     90: {2, 3},
@@ -93,8 +97,7 @@ experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=["E_ANM", "E_FlowLine"])
-experiments.select_DTG(X=["E_ANM"])
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
 # ID vem de:
 # experiments.compares['E_ANM'][0] ou [1], 0: antes, [1]: depois
@@ -111,7 +114,7 @@ experiments.preparaDados()
 
 # Obtem as classe do Bettersizer e define a malha
 # Create mesh
-x = read_excel(dir + "/classes.xlsx")
+x = read_excel(join(dir, "pb_data\\classes.xlsx"))
 # diameter is in micrometer and volume is in mm³
 d, v = x["d"].to_numpy(), x["v [mm³]"].to_numpy()
 dxi = diff(v)
@@ -126,7 +129,7 @@ experiments.reduce_DTG(M, sl)
 
 
 # Define a função de cálculo
-def PB_solve(M, xi, dxi, C, sol, data, ts=50):
+def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
     pbe_solutions = DTGSolution(
         M=M,
         xi=xi,
@@ -136,22 +139,29 @@ def PB_solve(M, xi, dxi, C, sol, data, ts=50):
         data=data,
         IDs=sol["compares"],
         marco=sol["marco"],
-        model_parameters=array(C),
+        model_parameters=mp,
+        breakupmodel=model["breakup"],
+        coalescencemodel=model["coalescence"],
+        DDSDmodel=model["DDSD"],
+        varsigma=model["varsigma"],
+        fator=fator,
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions
 
 
 # Roda a simulação
-def run_sim(testes, objetive=None, C0=None, ts=50):
+def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5, dp_name="MV01"):
     i = 0
     sol = dict()
     sol["experiments"] = experiments
     sol["testes"] = testes
     sol["objective"] = objetive
+    sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares["E_ANM"]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -161,11 +171,23 @@ def run_sim(testes, objetive=None, C0=None, ts=50):
                 "N_escoam": N,
                 "marco": marco,
                 "compares": IDs,
+                "C0": C0,
                 "exp": exp,
                 "M": M,
+                "mp": Cname,
+                "dp_name": dp_name,
             }
+            mp = {i: j for i, j in zip(Cname, C0)}
             sol[i]["pbe_sol"] = PB_solve(
-                M, xi, dxi, C0, sol[i], experiments, ts=ts  # m³  # m³
+                M,
+                xi,
+                dxi,
+                mp,
+                sol[i],
+                experiments,
+                model,
+                ts,
+                fator=fator,
             )
             print(sol[i]["pbe_sol"].moc.d43)
             i += 1
@@ -173,7 +195,7 @@ def run_sim(testes, objetive=None, C0=None, ts=50):
 
 
 def error_function(C, M, xi, dxi, sol, experiments, d43, dsd=None):
-    pbe_sol = PB_solve(M, xi, dxi, C, sol, experiments)  # mm³ to m³  # mm³ to m³
+    pbe_sol = PB_solve(M, xi, dxi, C, sol, experiments)  # mm³ to m³
     # moc_d43 = pbe_sol.moc.d43
     # error = abs(moc_d43 - d43) / d43
     if dsd is not None:
@@ -309,7 +331,7 @@ def main():
         128: {2},
     }
 
-    # O numero de funções objetivos serão a somatória de todos os marcos de todos os testes
+    # O N° de funções obj serão a soma de todos os marcos de todos os testes
     n_obj = sum([len(testes[i]) for i in testes])
     n_var = 4
     # Constantes minimas

@@ -11,7 +11,7 @@ from os import getcwd
 from sys import path as sph
 import pickle
 from numpy import abs, pi, set_printoptions
-from pandas import DataFrame, concat
+from pandas import DataFrame, concat, ExcelWriter, Series
 
 dir = dirname(__file__)
 
@@ -33,6 +33,7 @@ set_printoptions(precision=4)
 s_folder = "..\\solutions\\optimizations"
 plots_out = join(dir, "..\\", "plots")
 data_out = join(dir, "..\\", "tabelas")
+VALVULA = "MV01"
 optmization = [
     "murilo_optglobal_shgo_simplicial_10-05-2024.pickle",
     "murilo_optglobal_sobol_10-05-2024.pickle",
@@ -114,6 +115,7 @@ if plots_made[1]:
 Error = []
 C = []
 N_emul = []
+N_esc = []
 marco = []
 opt_flag = []
 method = []
@@ -146,6 +148,7 @@ if plots_made[2]:
             if not isinstance(i, int):
                 continue
             N_emul.append(int(run[i]["exp"]["N_emul"]))
+            N_esc.append(int(run[i]["exp"]["N_escoam"]))
             method.append(methods[r])
             model.append(models[r])
             marco.append(run[i]["marco"])
@@ -161,6 +164,7 @@ if plots_made[2]:
                 {
                     "Error": Error,
                     "N_emul": N_emul,
+                    "N_escoam": N_esc,
                     "opt_flag": opt_flag,
                     "method": method,
                     "model": model,
@@ -177,3 +181,6 @@ if plots_made[2]:
     best = C_global.groupby(by='method').get_group('SHGO Sobol')
 
     print(best[best['Error']< 0.08][['C1', 'C2', 'C2', 'C2', 'Error']].mean())
+
+    with ExcelWriter(join(data_out, f"C_global_CT_{VALVULA}.xlsx")) as writer:
+        C_global.to_excel(writer, sheet_name="C_global", index=False)

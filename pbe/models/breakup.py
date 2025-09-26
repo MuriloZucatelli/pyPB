@@ -63,6 +63,8 @@ class breakupModels:
             self.gamma = self.mb_gamma
         elif name == "cristini":
             self.gamma = self.cristini_gamma_1
+        elif name == "raikar":
+            self.gamma = self.raikar
         elif name is None:
             self.gamma = None
         else:
@@ -309,6 +311,56 @@ class breakupModels:
                 )
             )
         )
+
+    def raikar(self, v: float) -> float:
+        """
+            Raikar 2010
+        """
+
+        K5 = self.get_constant(self.mp.Cb, "K5")
+        K6 = self.get_constant(self.mp.Cb, "K6")
+
+        d = (6 * array(v) / pi) ** (1 / 3)
+
+        # Capilarity number
+        Ca = self.cp.mu * d * sqrt(self.cp.epsilon / self.cp.nu) / (2 * self.dp.sigma)
+
+        # Ca_crit: Modeled by assuming that dcrit is the minimum attainable droplet diameter at
+        # the outlet of the test section as most of the data are for breakage dominant conditions
+        # Experimental parameters
+        CCa = 1.65e-4  # The minimum attainable droplet diameter at the
+        C_Re = 3 / 20  # outlet of the test section could be correlated with
+        We_crit = 6
+        # Eq. 27
+        Stk = self.domain.tres / sqrt(self.cp.nu / self.cp.epsilon)
+        _, _, h = self.calc_U_max(1, self.domain.A, self.domain.D)
+        Re_max = self.domain.Q / (h * self.cp.nu)
+        # Re_max = (Q / A_min) * c / nu  # c é a abertura minima da válvula
+        Ca_crit = CCa * Stk * Re_max ** (-C_Re)
+
+        lambdak = (self.cp.nu**3 / self.cp.epsilon) ** (1 / 4) #Kolmogorov lenght
+
+        G = self.domain.Q/V
+
+        i = where(Ca > Ca_crit)
+        b = zeros_like(d)
+
+        b[i] = (
+            K5(2 / pi) ** (1 / 2)
+            * self.domain.Q
+            * exp(
+                -(
+                    (
+                        K6
+                        * (2 * Ca_crit * self.dp.sigma * pi ** (1 / 3))
+                        / (self.cp.mu * self.domain.Q * (6 * v) ** (1 / 3))
+                    )
+                    ** 2
+                )
+            )
+        )
+        b[not i] = 0
+        return b
 
     @classmethod
     def get_constant(cls, constant, name):

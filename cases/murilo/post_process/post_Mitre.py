@@ -51,8 +51,6 @@ VALVULA = "MV01"
 IGNORAR_TESTES = [88]
 data1 = "03-12-2024"
 data2 = "03-12-2024"
-data1 = "29-11-2024"
-data2 = "29-11-2024"
 
 s_folder = join(dir, f"..\\solutions\\{SOLUTION_NAME}\\")
 plots_out = join(s_folder, "plots")
@@ -62,8 +60,8 @@ plots2made = {
     "Erro_X_Teste": True,
     "Erro_X_Teste_otimizado": False,
     "DTGs": False,
-    "Convergencia_no_tempo": True,
-    "Convergencia_volume_dissipacao": True,
+    "Convergencia_no_tempo": False,
+    "Convergencia_volume_dissipacao": False,
     "Frequencia_quebra_coalescencia": False,
 }
 
@@ -122,25 +120,14 @@ if plots2made["Erro_X_Teste"]:
             "run_id": Series.mode,
             "Erro": ["mean", "max"],
             "Erro_Er": ["mean", "max", "min"],
+            "ts": Series.mode,
             "We": "mean",
             "Re": "mean",
         }
     )
 
-    j = 0
-    for r in runs:
-        sol = runs[r]
-        print(f"Getting {r} simulation")
-        for i in sol:  # Iterate over each entry
-            if not isinstance(i, int):
-                continue
-            if sol[i]["N_escoam"] in IGNORAR_TESTES:
-                continue
-            if sol[i].get("opt_flag") is not None:
-                print("Optmization case, better use another pos-process")
-                break
-            dtg_a, d43_a, dtg_d, d43_d = get_dtg(sol["experiments"], sol[i])
-        j += 1
+    print(datared)
+    datared.columns = list(map(" ".join, datared.columns.values))  # Remove multindex
 
     error_x_(
         data,
@@ -214,7 +201,7 @@ if plots2made["Erro_X_Teste"]:
         DTG_best_worst(
             data.iloc[to_plot],
             runs,
-            f"DTG_best_worst_{run}",
+            f"DTG_best_worst_{run}_{SOLUTION_NAME}",
             plots_out,
             save=True,
             nrows=1,
@@ -222,14 +209,15 @@ if plots2made["Erro_X_Teste"]:
             dp_name=VALVULA,
         )
 
-    DTGs_plot(
-        data,
-        runs,
-        f"{SOLUTION_NAME}",
-        join(plots_out, f"DTGs_{SOLUTION_NAME}"),
-        dp_name=VALVULA,
-        save=plots2made["DTGs"],
-    )
+    if plots2made["DTGs"]:
+        DTGs_plot(
+            data,
+            runs,
+            f"{SOLUTION_NAME}",
+            join(plots_out, f"DTGs"),
+            dp_name=VALVULA,
+            save=plots2made["DTGs"],
+        )
 
     with ExcelWriter(join(data_out, f"{MODELO}_{VALVULA}.xlsx")) as writer:
         data.to_excel(writer, sheet_name=f"{SOLUTION_NAME}", index=False)
@@ -247,7 +235,7 @@ if plots2made["Convergencia_no_tempo"]:
     # folderCTOut = join(plots_out, "C&T_model")
     #
     runs = {}
-    runs_name = "Mitre"
+    runs_name = "Mitre_CEM"
     for solution in solutions_convergencia_tempo:
         with gzip.open(join(dir, s_folder, "Teste convergencia", solution), "rb") as f:
             runs[solution] = pickle.load(f)
@@ -257,7 +245,7 @@ if plots2made["Convergencia_no_tempo"]:
     datared = data.groupby(by="run_id").agg(
         {
             "run_id": Series.mode,
-            "Erro": ["mean", "max"],
+            "Erro": ["min", "mean", "max"],
             "ts": Series.mode,
             "dt": "mean",
         }
@@ -267,7 +255,7 @@ if plots2made["Convergencia_no_tempo"]:
 
     error_x_(
         datared,
-        f"erro_x_timestep_{runs_name}_{VALVULA}",
+        f"Erro_x_timestep_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="ts mode",
@@ -283,7 +271,7 @@ if plots2made["Convergencia_no_tempo"]:
 
     error_x_(
         datared,
-        f"erro_x_dt_{runs_name}_{VALVULA}",
+        f"Erro_x_dt_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="dt mean",
@@ -312,7 +300,7 @@ if plots2made["Convergencia_no_tempo"]:
 if plots2made["Convergencia_volume_dissipacao"]:
     #
     runs = {}
-    runs_name = "Mitre"
+    runs_name = "Mitre_CEM"
 
     for solution in solutions_convergencia_volume:
         with gzip.open(
@@ -336,7 +324,7 @@ if plots2made["Convergencia_volume_dissipacao"]:
 
     error_x_(
         datared,
-        f"erro_x_fdiss_{runs_name}_{VALVULA}",
+        f"Erro_x_fdiss_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="fdiss mean",

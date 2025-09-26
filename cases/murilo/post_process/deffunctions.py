@@ -4,8 +4,6 @@ from numpy import abs, diff, linspace, interp
 from pandas import DataFrame, concat, ExcelWriter, Series
 
 
-
-
 def calc_L11(Relambda, ReLe):
     return 6.12556331 * (Relambda**-0.82218137) + 0.42350691
     # (Relambda**2 / ReLe) * (3 / 2) ** (1 / 2) / 20
@@ -48,24 +46,23 @@ def calc_error(sol, exp, tipo="psi"):
         tipo (str): Er or psi. Defaults to "psi".
     """
     dtg = exp.get_DTG(teste=sol["N_escoam"], marco=sol["marco"], ID=sol["compares"][1])
-    d43 = exp.get_D_caracteristico(dtg, sol["pbe_sol"].moc.xi_d, dff=[4, 3])
+    d43_exp = exp.get_D_caracteristico(dtg, sol["pbe_sol"].moc.xi_d, dff=[4, 3])
     diff_DTG = sum(abs(sol["pbe_sol"].N2Fv - dtg["freq_v"] / 100))
     # Função erro relativo para cada distribuição:
-    erro_D43 = abs(sol["pbe_sol"].moc.d43 - d43) / d43
     if tipo == "psi":
         return sum((sol["pbe_sol"].N2Fv - dtg["freq_v"] / 100) ** 2) / sum(
             (dtg["freq_v"] / 100) ** 2
         )
     elif tipo == "Er":
-        return sum(sol["pbe_sol"].N2Fv - dtg["freq_v"] / 100) / sum(dtg["freq_v"] / 100)
+        return (sol["pbe_sol"].moc.d43 - d43_exp) / (d43_exp)
 
     elif tipo == "D43":
-        pass
+        return (sol["pbe_sol"].moc.d43 - d43_exp) / d43_exp
     else:
         raise Exception(f"tipo not defined: {tipo}")
 
 
-def get_properties(runs, solutions):
+def get_properties(runs, solutions, IGNORAR_TESTES):
 
     psi = []
     Er = []
@@ -99,7 +96,7 @@ def get_properties(runs, solutions):
         for i in sol:  # Iterate over each entry
             if not isinstance(i, int):
                 continue
-            if i == 0 or i == 1:  # Pular teste 88
+            if sol[i]["N_escoam"] in IGNORAR_TESTES:
                 continue
             if sol[i].get("opt_flag") is not None:
                 print("Optmization case, better use another pos-process")
@@ -112,12 +109,14 @@ def get_properties(runs, solutions):
             marco.append(sol[i]["marco"])
             if sol[i]["compares"] == [2, 3]:
                 compare.append("E_ANM")
+            if sol[i]["compares"] == [5, 6]:
+                compare.append("E_Choke")
             mv01.append(sol[i]["exp"]["ANM"])
-            mv02.append(sol[i]["exp"]["ANM"])
+            mv02.append(sol[i]["exp"]["Choke"])
             dtg_a, d43_a, dtg_d, d43_d = get_dtg(sol["experiments"], sol[i])
             D43_r.append(d43_d / d43_a)
             we.append(dtg_a["We"].mean())
-            re.append(sol[i]["exp"]["Re"])
+            re.append(sol[i]["exp"]["Re_MV01"])
             ch2o.append(sol[i]["exp"]["C_agua [%]"])
             epsilon.append(sol[i]["pbe_sol"].cp.epsilon)
             psi.append(calc_error(sol[i], sol["experiments"]))
@@ -146,8 +145,8 @@ def get_properties(runs, solutions):
                     "N_esc": N_esc,
                     "Marco": marco,
                     "Compare": compare,
-                    "MV-01 [%]": mv01,
-                    "MV-02 [%]": mv02,
+                    "MV01 [%]": mv01,
+                    "MV02 [%]": mv02,
                     "epsilon": epsilon,
                     "Re": re,
                     "We": we,

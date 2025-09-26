@@ -61,7 +61,12 @@ encoding = {
 
 
 def plt_config2(
-    relative_fig_width=1.0, landscape=True, invert=False, page_width=210, rescale_h=1
+    relative_fig_width=1.0,
+    landscape=True,
+    invert=False,
+    page_width=210,
+    rescale_h=1,
+    golden_mean=None,
 ):
     """_summary_
 
@@ -97,7 +102,8 @@ def plt_config2(
 
     fig_width_pt = page_width * relative_fig_width
     mm_to_inches = 1.0 / 25.4  # Convert pt to mm
-    golden_mean = (sqrt(5.0) - 1.0) / 2.0  # Aesthetic ratio
+    if golden_mean == None:
+        golden_mean = (sqrt(5.0) - 1.0) / 2.0  # Aesthetic ratio
     fig_width = fig_width_pt * mm_to_inches  # width in mm
 
     if landscape:
@@ -110,13 +116,14 @@ def plt_config2(
     fig_size = [fig_width, fig_height]
 
     if invert:
-        fig_size = [fig_height*1.1, fig_width]
+        fig_size = [fig_height * 1.1, fig_width]
 
     # Modifica o estilo:
     params = {
         "font.family": "serif",
         "font.size": 12,
         "axes.labelsize": 11,
+        "axes.grid": True,
         "xtick.labelsize": 12,
         "ytick.labelsize": 12,
         "xtick.direction": "in",
@@ -132,7 +139,7 @@ def plt_config2(
         "legend.numpoints": 1,
         "legend.handletextpad": 0.2,
         "legend.framealpha": 0.2,
-        "lines.markersize": 3,
+        "lines.markersize": 8,
         # 'xtick.labelsize': 7,
         # 'ytick.labelsize': 7,
         "text.usetex": True,

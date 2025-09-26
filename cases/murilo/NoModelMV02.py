@@ -35,7 +35,10 @@ set_printoptions(precision=4)
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
 pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
-pasta_out = "solutions\\NoModel_MV02"
+pasta_out = "solutions\\NoModel"
+VALVULA = "MV02"
+X_COMPARE = ["E_Choke"]  # ["E_ANM", "E_FlowLine"]
+
 testes_all = {
     88: {2, 3},
     90: {2, 3},
@@ -77,6 +80,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {3},    # Não tem o marco 2 no extrator 5
+    129: {2, 3},
 }
 
 # Args são os parâmetros para resolver a PBE
@@ -93,26 +97,19 @@ noModel = (
     },
 )
 
-args1 = [(testes_all, "NoModel_MV02 5D", *noModel, 100, 5, "MV02")]
+args1 = [(testes_all, f"NoModel_{VALVULA} 5D", *noModel, 100, 5, VALVULA)]
 # Teste de convergencia de malha.
-args2 = [
-    (testes_all, "NoModel_MV02 5D", *noModel, 100, 5, "MV02"),
-]
+args2 = [(testes_all, f"NoModel_{VALVULA} 5D", *noModel, 100, 5, VALVULA)]
 
 args = [*args2]
 
+sols = {f"sol_NoModel_{VALVULA}_5D": 0}
 
-sols = {
-    "sol_NoModel_MV02_5D": 0}
-
-x_compare = ["E_Choke"]  # ["E_ANM", "E_FlowLine"]
-if x_compare == "E_Choke":
-    dp_name = "MV02"
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=x_compare)
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
 # experiments.get_DTG(teste=90, marco=3, ID=3)
 # ID vem de:
@@ -185,7 +182,7 @@ def run_sim(
     sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares[x_compare[0]]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -211,7 +208,7 @@ def run_sim(
                 experiments,
                 model,
                 ts,
-                fator,
+                fator=fator,
             )
             print(sol[i]["pbe_sol"].moc.d43)
             i += 1

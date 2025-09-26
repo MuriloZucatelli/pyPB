@@ -1,3 +1,5 @@
+Dar uma geral nisso aqui pra por na dissertação de mestrado
+
 opt_murilo_optglobal_shgo_erro_soma_29-05-2024:
 	Testes selecionados
 	função objetivo é a soma do erro de todos os testes
@@ -52,4 +54,4 @@ opt_pymoo_CT_31-05-2024
 	Cl = array([1e-6 * 0.4, 1e-6 * 0.08, 1e-6 * 2.8e-6, 1e-6 * 1.83e9])
 	# Constantes máximas
 	Cu = array([1e6 * 0.4, 1e6 * 0.08, 1e6 * 2.8e-6, 1e4 * 1.83e9])
-	
+	Qual o resultado?????????????????

@@ -20,7 +20,7 @@ Ns = linspace(3, 6, 5)  # rps
 #Ns = array([3])
 # Ns = [5.16]
 ct_solutions = dict([(
-    c, [CTSolution(M=10, Nstar=N, phi=c / 100.0) for N in Ns])
+    c, [CTSolution(M=40, Nstar=N, phi=c / 100.0) for N in Ns])
     for c in concentrations])
 
 
@@ -57,4 +57,4 @@ first_legend = ax.legend(handles[1:], labels[1:], loc='upper right')
 ax.add_artist(first_legend)
 second_legend = ax.legend(handles[:1], labels[:1], loc='lower left')
 fig.patch.set_alpha(0)
-fig.savefig(os.path.join(dir, "ct-d32_ramk.pdf"), bbox_inches='tight')
+fig.savefig(os.path.join(dir, "ct-d32_ramk_t4.pdf"), bbox_inches='tight')

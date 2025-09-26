@@ -15,8 +15,8 @@ from pandas import read_excel
 from multiprocessing import Pool
 from datetime import date
 import pickle
-import time
 import gzip
+import time
 
 dir = dirname(__file__)
 if __name__ == "__main__":
@@ -34,8 +34,11 @@ set_printoptions(precision=4)
 
 data = date.today().strftime("%d-%m-%Y")
 # Importa dados
-pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB_completo"))
-pasta_out = "solutions\\Mitre_DOE"
+pasta = abspath(join(dir, "..\\..\\..", r"6. Compilado\\LP_PB2"))
+pasta_out = "solutions\\MitreDOE2"
+
+VALVULA = "MV01"
+X_COMPARE = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
 testes_all = {
     88: {2, 3},
     90: {2, 3},
@@ -77,6 +80,7 @@ testes_all = {
     126: {2, 3},
     127: {2, 3},
     128: {2, 3},
+    129: {2, 3},
 }
 
 testes_selec = {
@@ -108,16 +112,20 @@ testes_selec = {
     125: {3},
     128: {2},
 }
+testes_selec = {
+    122: {3},
+}
+# Analisar o 107_3 e o 104_2 121_3 122_3
 # Args são os parâmetros para resolver a PBE
 # testes, objetive, C0, Cname, model, ts
 # varsigma: number of droplets from breakup
 
 
 def nivel_DOE(m, zeta):
-    Cc = 0.90 / 1e2 * (1 + m[0] * zeta)
-    Ce = 1 / 1e2 * (1 + m[1] * zeta)
-    Cb = 0.81 / 1e2 * (1 + m[2] * zeta)
-    varsigma = 31.2 * (1 + m[3] * zeta)
+    Cc = 0.90 / 1e2 * (1 + m[0] * zeta[0] / 2)
+    Ce = 1 / 1e2 * (1 + m[1] * zeta[1] / 2)
+    Cb = 0.81 / 1e2 * (1 + m[2] * zeta[2] / 2)
+    varsigma = 31.2 * (1 + m[3] * zeta[3] / 2)
 
     return (
         [Cc, Ce, Cb],
@@ -132,71 +140,73 @@ def nivel_DOE(m, zeta):
 
 
 # Testes padronizados
-zeta = 10 / 100
+zeta = [52.2 / 100,
+        50 / 100,
+        75 / 100,
+        30.4 / 100]  # Cc, Ce, Cb, Varsigma
 
 args = [
-    (testes_selec, "Mitre_CEM_1", *nivel_DOE([-1, -1, -1, -1], zeta)),  # 1
-    (testes_selec, "Mitre_CEM_2", *nivel_DOE([1, -1, -1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_3", *nivel_DOE([-1, 1, -1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_4", *nivel_DOE([1, 1, -1, -1], zeta)),  # 4
-    (testes_selec, "Mitre_CEM_5", *nivel_DOE([-1, -1, 1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_6", *nivel_DOE([1, -1, 1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_7", *nivel_DOE([-1, 1, 1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_8", *nivel_DOE([1, 1, 1, -1], zeta)),
-    (testes_selec, "Mitre_CEM_9", *nivel_DOE([-1, -1, -1, 1], zeta)),  # 9
-    (testes_selec, "Mitre_CEM_10", *nivel_DOE([1, -1, -1, 1], zeta)),
-    (testes_selec, "Mitre_CEM_11", *nivel_DOE([-1, 1, -1, 1], zeta)),
-    (testes_selec, "Mitre_CEM_12", *nivel_DOE([1, 1, -1, 1], zeta)),
-    (testes_selec, "Mitre_CEM_13", *nivel_DOE([-1, -1, 1, 1], zeta)),  # 13
-    (testes_selec, "Mitre_CEM_14", *nivel_DOE([1, -1, 1, 1], zeta)),
-    (testes_selec, "Mitre_CEM_15", *nivel_DOE([-1, 1, 1, 1], zeta)),
-    (testes_selec, "Mitre_CEM_16", *nivel_DOE([1, 1, 1, 1], zeta)),  # 16
-    (testes_selec, "Mitre_CEM_17", *nivel_DOE([-2, 0, 0, 0], zeta)),
-    (testes_selec, "Mitre_CEM_18", *nivel_DOE([2, 0, 0, 0], zeta)),
-    (testes_selec, "Mitre_CEM_19", *nivel_DOE([0, -2, 0, 0], zeta)),
-    (testes_selec, "Mitre_CEM_20", *nivel_DOE([0, 2, 0, 0], zeta)),
-    (testes_selec, "Mitre_CEM_21", *nivel_DOE([0, 0, -2, 0], zeta)),
-    (testes_selec, "Mitre_CEM_22", *nivel_DOE([0, 0, 2, 0], zeta)),
-    (testes_selec, "Mitre_CEM_23", *nivel_DOE([0, 0, 0, -2], zeta)),
-    (testes_selec, "Mitre_CEM_24", *nivel_DOE([0, 0, 0, 2], zeta)),
-    (testes_selec, "Mitre_CEM_25", *nivel_DOE([0, 0, 0, 0], zeta)),
+    (testes_selec, "Mitre_CEM_1", *nivel_DOE([-1, -1, -1, -1], zeta), 100, 5, VALVULA),  # 1
+    (testes_selec, "Mitre_CEM_2", *nivel_DOE([1, -1, -1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_3", *nivel_DOE([-1, 1, -1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_4", *nivel_DOE([1, 1, -1, -1], zeta), 100, 5, VALVULA),  # 4
+    (testes_selec, "Mitre_CEM_5", *nivel_DOE([-1, -1, 1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_6", *nivel_DOE([1, -1, 1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_7", *nivel_DOE([-1, 1, 1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_8", *nivel_DOE([1, 1, 1, -1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_9", *nivel_DOE([-1, -1, -1, 1], zeta), 100, 5, VALVULA),  # 9
+    (testes_selec, "Mitre_CEM_10", *nivel_DOE([1, -1, -1, 1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_11", *nivel_DOE([-1, 1, -1, 1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_12", *nivel_DOE([1, 1, -1, 1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_13", *nivel_DOE([-1, -1, 1, 1], zeta), 100, 5, VALVULA),  # 13
+    (testes_selec, "Mitre_CEM_14", *nivel_DOE([1, -1, 1, 1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_15", *nivel_DOE([-1, 1, 1, 1], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_16", *nivel_DOE([1, 1, 1, 1], zeta), 100, 5, VALVULA),  # 16
+    (testes_selec, "Mitre_CEM_17", *nivel_DOE([-2, 0, 0, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_18", *nivel_DOE([2, 0, 0, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_19", *nivel_DOE([0, -2, 0, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_20", *nivel_DOE([0, 2, 0, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_21", *nivel_DOE([0, 0, -2, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_22", *nivel_DOE([0, 0, 2, 0], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_23", *nivel_DOE([0, 0, 0, -2], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_24", *nivel_DOE([0, 0, 0, 2], zeta), 100, 5, VALVULA),
+    (testes_selec, "Mitre_CEM_25", *nivel_DOE([0, 0, 0, 0], zeta), 100, 5, VALVULA),
 ]
 
 sols = {
-    "sol_Mitre_CEM_1": 0,
-    "sol_Mitre_CEM_2": 1,
-    "sol_Mitre_CEM_3": 2,
-    "sol_Mitre_CEM_4": 3,
-    "sol_Mitre_CEM_5": 4,
-    "sol_Mitre_CEM_6": 5,
-    "sol_Mitre_CEM_7": 6,
-    "sol_Mitre_CEM_8": 7,
-    "sol_Mitre_CEM_9": 8,
-    "sol_Mitre_CEM_10": 9,
-    "sol_Mitre_CEM_11": 10,
-    "sol_Mitre_CEM_12": 11,
-    "sol_Mitre_CEM_13": 12,
-    "sol_Mitre_CEM_14": 13,
-    "sol_Mitre_CEM_15": 14,
-    "sol_Mitre_CEM_16": 15,
-    "sol_Mitre_CEM_17": 16,
-    "sol_Mitre_CEM_18": 17,
-    "sol_Mitre_CEM_19": 18,
-    "sol_Mitre_CEM_20": 19,
-    "sol_Mitre_CEM_21": 20,
-    "sol_Mitre_CEM_22": 21,
-    "sol_Mitre_CEM_23": 22,
-    "sol_Mitre_CEM_24": 23,
-    "sol_Mitre_CEM_25": 24,
+    f"sol_{VALVULA}_Mitre_CEM_1": 0,
+    f"sol_{VALVULA}_Mitre_CEM_2": 1,
+    f"sol_{VALVULA}_Mitre_CEM_3": 2,
+    f"sol_{VALVULA}_Mitre_CEM_4": 3,
+    f"sol_{VALVULA}_Mitre_CEM_5": 4,
+    f"sol_{VALVULA}_Mitre_CEM_6": 5,
+    f"sol_{VALVULA}_Mitre_CEM_7": 6,
+    f"sol_{VALVULA}_Mitre_CEM_8": 7,
+    f"sol_{VALVULA}_Mitre_CEM_9": 8,
+    f"sol_{VALVULA}_Mitre_CEM_10": 9,
+    f"sol_{VALVULA}_Mitre_CEM_11": 10,
+    f"sol_{VALVULA}_Mitre_CEM_12": 11,
+    f"sol_{VALVULA}_Mitre_CEM_13": 12,
+    f"sol_{VALVULA}_Mitre_CEM_14": 13,
+    f"sol_{VALVULA}_Mitre_CEM_15": 14,
+    f"sol_{VALVULA}_Mitre_CEM_16": 15,
+    f"sol_{VALVULA}_Mitre_CEM_17": 16,
+    f"sol_{VALVULA}_Mitre_CEM_18": 17,
+    f"sol_{VALVULA}_Mitre_CEM_19": 18,
+    f"sol_{VALVULA}_Mitre_CEM_20": 19,
+    f"sol_{VALVULA}_Mitre_CEM_21": 20,
+    f"sol_{VALVULA}_Mitre_CEM_22": 21,
+    f"sol_{VALVULA}_Mitre_CEM_23": 22,
+    f"sol_{VALVULA}_Mitre_CEM_24": 23,
+    f"sol_{VALVULA}_Mitre_CEM_25": 24,
 }
 
-x_compare = ["E_ANM"]  # ["E_ANM", "E_FlowLine"]
 
 experiments = Import_flow_DSD2(get_location(pasta), teste=testes_all)
 
 
 # Seleciona local de avaliação
-experiments.select_DTG(X=x_compare)
+experiments.select_DTG(X=X_COMPARE)
 # Como obter apenas uma DTG:
 # ID vem de:
 # experiments.compares['E_ANM'][0] ou [1], 0: antes, [1]: depois
@@ -228,7 +238,7 @@ experiments.reduce_DTG(M, sl)
 
 
 # Define a função de cálculo
-def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator):
+def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator=5):
     pbe_solutions = DTGSolution(
         M=M,
         xi=xi,
@@ -244,13 +254,14 @@ def PB_solve(M, xi, dxi, mp, sol, data, model, ts, fator):
         DDSDmodel=model["DDSD"],
         varsigma=model["varsigma"],
         fator=fator,
+        dp_name=sol["dp_name"],
     )
 
     return pbe_solutions
 
 
 # Roda a simulação
-def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5):
+def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fator=5, dp_name="MV01"):
     i = 0
     sol = dict()
     sol["experiments"] = experiments
@@ -259,7 +270,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
     sol["model"] = model
     for N in testes:
         print("Teste número", N, " Marcos: ", list(testes[N]))
-        IDs = experiments.compares[x_compare[0]]
+        IDs = experiments.compares[X_COMPARE[0]]
         for marco in testes[N]:
             exp = experiments.dados.loc[
                 (experiments.dados["Marco"] == marco)
@@ -273,6 +284,7 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 "exp": exp,
                 "M": M,
                 "mp": Cname,
+                "dp_name": dp_name,
             }
             mp = {i: j for i, j in zip(Cname, C0)}
             sol[i]["pbe_sol"] = PB_solve(
@@ -284,9 +296,9 @@ def run_sim(testes, objetive=None, C0=None, Cname=None, model=None, ts=100, fato
                 experiments,
                 model,
                 ts,
-                fator,
+                fator=fator,
             )
-            #print(sol[i]["pbe_sol"].moc.d43)
+            # print(sol[i]["pbe_sol"].moc.d43)
             i += 1
     return sol
 
@@ -307,6 +319,5 @@ if __name__ == "__main__":
         with gzip.open(join(dir, pasta_out, f"{sol}_{data}.pickle"), "wb") as f:
             pickle.dump(results[i], f)
             i += 1
-
 t2 = time.time()
 print("time Pool: ", t2 - t1)

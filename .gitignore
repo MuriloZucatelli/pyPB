@@ -21,3 +21,5 @@ versions
 *venvnote
 cases/murilo/solutions/optimizations/Output_SHGO_Simplicial_11-05-2024.txt
 *.mpx.bak
+setup.py
+*.svg

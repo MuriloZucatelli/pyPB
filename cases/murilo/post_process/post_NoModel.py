@@ -27,8 +27,6 @@ from pbe.app.dtg_class import (
 )
 from utils.plot_PB_basic import (
     D43Reduction_x_Epsilon,
-    D95_x_Epsilon,
-    D90_d_a_Epsilon,
     error_x_,
     DTG_best_worst,
     DTGs_plot,
@@ -40,21 +38,23 @@ plt_config2(relative_fig_width=0.7)
 set_printoptions(precision=4)
 
 SOLUTION_NAME = "NoModel"
+VALVULA = "MV02"
+IGNORAR_TESTES = [88]
+data1 = "03-12-2024"
 
 s_folder = join(dir, f"..\\solutions\\{SOLUTION_NAME}\\")
 plots_out = join(s_folder, "plots")
 data_out = join(s_folder, "tabelas")
-data1 = "11-11-2024"
 
 # data2 = "20-06-2024"
 plots2made = {
     "Erro_X_Teste": True,
-    "DTG_plot": True,
+    "DTGs": True,
     "Convergencia_no_tempo": False,
     "Convergencia_volume_dissipacao": False,
 }
 solutions = {
-    f"sol_{SOLUTION_NAME}_5D_{data1}.pickle": "Sem Modelo",
+    f"sol_{SOLUTION_NAME}_{VALVULA}_5D_{data1}.pickle": "Sem Modelo",
 }
 
 solutions_convergencia_tempo = [
@@ -99,65 +99,84 @@ if plots2made["Erro_X_Teste"]:
         with gzip.open(join(dir, s_folder, solution), "rb") as f:
             runs[solution] = pickle.load(f)
 
-    data = get_properties(runs, solutions)
+    data = get_properties(runs, solutions, IGNORAR_TESTES)
 
-    datared = data.groupby(by="run_id").agg(
+    datared = data.groupby(by=["Nome", "H2O [%]"]).agg(
         {
             "run_id": Series.mode,
             "Erro": ["min", "mean", "max"],
+            "Erro_Er": ["mean", "max", "min"],
             "ts": Series.mode,
             "dt": "mean",
+            "We": "mean",
+            "Re": "mean",
         }
     )
+
     print(datared)
     datared.columns = list(map(" ".join, datared.columns.values))  # Remove multindex
 
     error_x_(
         data,
-        f"Erro_x_test_{runs_name}",
+        f"Erro_x_test_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
+        hue=f"{VALVULA} [%]",
     )
     error_x_(
         data,
-        f"Erro_x_test_{runs_name}_D43_red",
+        f"Erro_x_test_{runs_name}_{VALVULA}_D43_red",
         plots_out,
         save=True,
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
         size="Red D43",
+        hue=f"{VALVULA} [%]",
     )
 
     error_x_(
         data,
-        f"Erro_x_phi_{runs_name}",
+        f"Erro_x_phi_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="H2O [%]",
         hue="Nome",
         style="Nome",
-        xlabel=r"Concentração de água $\phi$ [-]",
+        xlabel="Concentração de água [-]",
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
     )
 
     error_x_(
         data,
-        f"Erro_x_abertura_{runs_name}",
+        f"Erro_x_abertura_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
-        x="ANM [%]",
+        x=f"{VALVULA} [%]",
         hue="H2O [%]",
-        xlabel=r"Abertura da válvula ANM \%",
+        xlabel=f"Abertura da válvula {VALVULA} %",
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
     )
 
     error_x_(
         data,
-        f"Erro_x_epsilon_{runs_name}",
+        f"Erro_x_epsilon_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="epsilon",
         hue="H2O [%]",
-        xlabel=r"Dissipação de energia cinética média $\overline{\epsilon}$ [m²/s³]",
+        xlabel=r"Dissipação de energia cinética $\overline{\epsilon}$ [m²/s³]",
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
     )
 
-    error_x_D43red(data, f"Erro_x_D43Red_{runs_name}", plots_out, save=True)
+    error_x_D43red(
+        data,
+        f"Erro_x_D43Red_{runs_name}_{VALVULA}",
+        plots_out,
+        save=True,
+        hue=f"{VALVULA} [%]",
+        ylabel=f"Erro relativo {VALVULA} " + r"$\psi$ \% ",
+        dp_name=VALVULA,
+    )
 
     x = data.groupby(by="Nome")
     for run in x.groups.keys():
@@ -168,33 +187,25 @@ if plots2made["Erro_X_Teste"]:
         DTG_best_worst(
             data.iloc[to_plot],
             runs,
-            f"DTG_best_worst_{run}",
+            f"DTG_best_worst_{run}_{SOLUTION_NAME}",
             plots_out,
             save=True,
             nrows=1,
-            ws=0.05,
+            ws=0.02,
+            dp_name=VALVULA,
         )
 
-    if plots2made["DTG_plot"]:
+    if plots2made["DTGs"]:
         DTGs_plot(
             data,
             runs,
             f"{runs_name}",
             join(plots_out, "DTGs"),
-            save=True,
+            dp_name=VALVULA,
+            save=plots2made["DTGs"],
         )
 
-    datared = data.groupby(by=["Parâmetro", "H2O [%]"]).agg(
-        {
-            "run_id": Series.mode,
-            "Erro": ["mean", "max"],
-            "Erro_Er": ["mean", "max", "min"],
-            "We": "mean",
-            "Re": "mean",
-        }
-    )
-
-    with ExcelWriter(join(data_out, f"{runs_name}_{data1}.xlsx")) as writer:
+    with ExcelWriter(join(data_out, f"{runs_name}_{VALVULA}_{data1}.xlsx")) as writer:
         data.to_excel(writer, sheet_name=f"{runs_name}", index=False)
         datared.to_excel(writer, sheet_name="datared")
 
@@ -206,7 +217,7 @@ if plots2made["Convergencia_no_tempo"]:
         with gzip.open(join(dir, s_folder, "Teste convergencia", solution), "rb") as f:
             runs[solution] = pickle.load(f)
 
-    data = get_properties(runs, solutions_convergencia_tempo)
+    data = get_properties(runs, solutions_convergencia_tempo, IGNORAR_TESTES)
 
     datared = data.groupby(by="run_id").agg(
         {
@@ -221,14 +232,14 @@ if plots2made["Convergencia_no_tempo"]:
 
     error_x_(
         datared,
-        f"erro_x_timestep_{runs_name}",
+        f"erro_x_timestep_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="ts mode",
         y="Erro mean",
         hue=None,
         xlabel=r"Número de passos de tempo [-]",
-        ylabel=r"Erro médio na ANM $\overline{\psi}$ \% ",
+        ylabel=f"Erro médio {VALVULA} " + r"$\overline{\psi}$ \% ",
         style=None,
         size=None,
         fw=0.6,
@@ -237,14 +248,14 @@ if plots2made["Convergencia_no_tempo"]:
 
     error_x_(
         datared,
-        f"erro_x_dt_{runs_name}",
+        f"erro_x_dt_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
         x="dt mean",
         y="Erro mean",
         hue=None,
         xlabel=r"Passo de tempo [s]",
-        ylabel=r"Erro médio na ANM $\overline{\psi}$ \% ",
+        ylabel=f"Erro médio {VALVULA} " + r"$\overline{\psi}$ \% ",
         style=None,
         size=None,
         fw=0.6,
@@ -272,28 +283,28 @@ if plots2made["Convergencia_volume_dissipacao"]:
         ) as f:
             runs[solution] = pickle.load(f)
 
-    data = get_properties(runs, solutions_convergencia_volume)
+    data = get_properties(runs, solutions_convergencia_volume, IGNORAR_TESTES)
 
     datared = data.groupby(by="run_id").agg(
-        {"ts": "median", "Erro": "mean", "dt": "mean", "fdiss": "mean"}
+        {"ts": Series.mode, "Erro": ["mean", "max"], "dt": "mean", "fdiss": "mean"}
     )
     print(datared)
 
     error_x_(
         datared,
-        f"erro_x_fdiss_{runs_name}",
+        f"erro_x_fdiss_{runs_name}_{VALVULA}",
         plots_out,
         save=True,
-        x="fdiss",
-        y="Erro",
+        x="fdiss mean",
+        y="Erro mean",
         hue=None,
         xlabel=r"Razão $V_{diss}/D$",
-        ylabel=r"Erro médio na ANM $\overline{\psi}$ \% ",
+        ylabel=f"Erro médio {VALVULA} " + r"$\overline{\psi}$ \% ",
         style=None,
         size=None,
         fw=0.6,
         xtext=0.6,
-        annot="Passos de tempo: {0:.0f} [-]".format(datared["ts"].mean()),
+        annot="Passos de tempo: {0:.0f} [-]".format(datared["ts mode"].mean()),
     )
 
 
@@ -321,22 +332,4 @@ if plots2made["Frequencia_quebra_coalescencia"]:
 
     datared = data.groupby(by="run_id").agg(
         {"ts": "median", "Erro": "mean", "dt": "mean", "fdiss": "mean"}
-    )
-    print(datared)
-
-    error_x_(
-        datared,
-        "erro_x_fdiss_Mitre",
-        plots_out,
-        save=True,
-        x="fdiss",
-        y="Erro",
-        hue=None,
-        xlabel=r"Razão $V_{diss}/D$",
-        ylabel=r"Erro médio na ANM $\overline{\psi}$ \% ",
-        style=None,
-        size=None,
-        fw=0.6,
-        xtext=0.6,
-        annot="Passos de tempo: {0:.0f} [-]".format(datared["ts"].mean()),
     )
